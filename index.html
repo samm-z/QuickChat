@@ -593,13 +593,10 @@ let connections = [];
 let roomId;
 let isHost = false;
 let roomPassword = null;
-let username = localStorage.getItem('quickchat-username') || "用户" + Math.floor(Math.random() * 1000);
+let username = "用户" + Math.floor(Math.random() * 1000);
 let userCount = 1;
-let roomUsers = [];
-let isRoomPaused = false;
-let savedMessages = [];
 
-// Theme handling
+// 主题处理
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
@@ -638,7 +635,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
   }
 });
 
-// Room creation and joining
+// 房间管理
 function showCreateRoomOptions() {
   document.getElementById('createRoomOptions').style.display = 'block';
 }
@@ -660,10 +657,10 @@ function togglePasswordInput() {
   }
 }
 
-if (localStorage.getItem('quickchat-roomId')) {
-  roomId = localStorage.getItem('quickchat-roomId');
-  isHost = localStorage.getItem('quickchat-isHost') === 'true';
-  roomPassword = localStorage.getItem('quickchat-roomPassword');
+if (localStorage.getItem('roomId')) {
+  roomId = localStorage.getItem('roomId');
+  isHost = localStorage.getItem('isHost') === 'true';
+  roomPassword = localStorage.getItem('roomPassword');
   initPeer();
 }
 
@@ -677,12 +674,12 @@ function createRoom() {
     roomPassword = null;
   }
   
-  localStorage.setItem('quickchat-roomId', roomId);
-  localStorage.setItem('quickchat-isHost', 'true');
+  localStorage.setItem('roomId', roomId);
+  localStorage.setItem('isHost', 'true');
   if (roomPassword) {
-    localStorage.setItem('quickchat-roomPassword', roomPassword);
+    localStorage.setItem('roomPassword', roomPassword);
   } else {
-    localStorage.removeItem('quickchat-roomPassword');
+    localStorage.removeItem('roomPassword');
   }
   
   initPeer();
@@ -718,12 +715,12 @@ function joinRoom() {
     isHost = false;
     roomPassword = document.getElementById('joinRoomPassword').value.trim();
     
-    localStorage.setItem('quickchat-roomId', roomId);
-    localStorage.setItem('quickchat-isHost', 'false');
+    localStorage.setItem('roomId', roomId);
+    localStorage.setItem('isHost', 'false');
     if (roomPassword) {
-      localStorage.setItem('quickchat-roomPassword', roomPassword);
+      localStorage.setItem('roomPassword', roomPassword);
     } else {
-      localStorage.removeItem('quickchat-roomPassword');
+      localStorage.removeItem('roomPassword');
     }
     
     initPeer();
@@ -740,7 +737,7 @@ function joinRoom() {
   }
 }
 
-// PeerJS connection handling
+// 连接管理
 function initPeer() {
   document.getElementById('menu').classList.remove('active');
   document.getElementById('chat').classList.add('active');
@@ -752,13 +749,6 @@ function initPeer() {
     
     peer.on('open', () => {
       addSystemMessage('房间创建成功，等待其他用户加入...');
-      // 房主将自己添加到用户列表
-      roomUsers.push({
-        id: peer.id,
-        username: '房主',
-        isHost: true
-      });
-      updateUserList();
     });
     
     peer.on('connection', (conn) => {
@@ -770,19 +760,17 @@ function initPeer() {
     peer.on('open', (id) => {
       const conn = peer.connect(roomId, {
         reliable: true,
-        metadata: { 
-          username: username,
-          userId: id
-        }
+        metadata: { username: username }
       });
       
       conn.on('open', () => {
         conn.send({
           type: 'auth',
           password: roomPassword,
-          username: username,
-          userId: id
+          username: username
         });
+        connections.push(conn);
+        setupConnection(conn);
       });
       
       conn.on('error', (err) => {
@@ -816,11 +804,11 @@ function initPeer() {
   });
 }
 
+// 修复房主消息重复的关键修改
 function handleNewConnection(conn) {
   conn.on('open', () => {
     conn.on('data', (data) => {
       if (data.type === 'auth') {
-        // 检查密码
         if (roomPassword && data.password !== roomPassword) {
           conn.send({
             type: 'auth-result',
@@ -831,43 +819,23 @@ function handleNewConnection(conn) {
           return;
         }
         
-        // 认证成功
         conn.send({
           type: 'auth-result',
           success: true,
-          connectedUsers: connections.length + 1,
-          messages: getSavedMessages()
+          connectedUsers: connections.length + 1
         });
         
-        // 保存连接和用户信息
         conn.username = data.username;
-        conn.userId = data.userId;
         connections.push(conn);
         setupConnection(conn);
         
-        // 添加到用户列表
-        roomUsers.push({
-          id: data.userId,
-          username: data.username,
-          isHost: false
-        });
-        updateUserList();
-        
-        // 通知所有人有新用户加入
-        broadcastSystemMessage(`${data.username} 加入了房间`);
-        updateUserCount();
-        broadcastUserCount();
-        broadcastUserList();
-      } else if (data.type === 'message') {
-        // 收到消息，显示并保存
-        addMessage(data.sender, data.content, 'received');
-        saveMessage(data.sender, data.content, 'received');
-        
-        // 房主广播给其他客户端（排除发送者）
         if (isHost) {
-          broadcastMessage(data.sender, data.content, conn);
+          broadcastSystemMessage(`${data.username} 加入了房间`);
+          updateUserCount();
+          broadcastUserCount();
         }
       }
+      // 移除了消息转发逻辑，防止房主消息重复
     });
   });
 }
@@ -876,35 +844,18 @@ function setupConnection(conn) {
   conn.on('data', (data) => {
     if (data.type === 'message') {
       addMessage(data.sender, data.content, 'received');
-      saveMessage(data.sender, data.content, 'received');
+      
+      // 只有房主需要转发消息，且不转发给自己
+      if (isHost && data.sender !== username) {
+        broadcastMessage(data.sender, data.content, conn);
+      }
     } else if (data.type === 'system') {
       addSystemMessage(data.content);
-      saveSystemMessage(data.content);
     } else if (data.type === 'auth-result') {
       if (data.success) {
         addSystemMessage('连接成功，可以开始聊天了');
         userCount = data.connectedUsers;
         updateUserCount();
-        
-        // 添加主持人到用户列表
-        roomUsers.push({
-          id: peer.id,
-          username: '房主',
-          isHost: true
-        });
-        
-        // 添加历史消息
-        if (data.messages && data.messages.length > 0) {
-          data.messages.forEach(msg => {
-            if (msg.type === 'message') {
-              addMessage(msg.sender, msg.content, msg.direction);
-            } else if (msg.type === 'system') {
-              addSystemMessage(msg.content);
-            }
-          });
-        }
-        
-        updateUserList();
       } else {
         addSystemMessage(`连接失败: ${data.message}`);
         setTimeout(leaveRoom, 2000);
@@ -912,56 +863,38 @@ function setupConnection(conn) {
     } else if (data.type === 'user-count') {
       userCount = data.count;
       updateUserCount();
-    } else if (data.type === 'user-list') {
-      roomUsers = data.users;
-      updateUserList();
     }
   });
   
   conn.on('close', () => {
-    // 从连接列表中移除
     const index = connections.indexOf(conn);
-    if (index > -1) {
-      connections.splice(index, 1);
-    }
+    if (index > -1) connections.splice(index, 1);
     
-    // 从用户列表中移除
-    const userIndex = roomUsers.findIndex(u => u.id === conn.userId);
-    if (userIndex > -1) {
-      const leftUsername = roomUsers[userIndex].username;
-      roomUsers.splice(userIndex, 1);
-      
-      // 通知有用户离开
-      broadcastSystemMessage(`${leftUsername} 离开了房间`);
-      saveSystemMessage(`${leftUsername} 离开了房间`);
-    } else {
+    if (conn.username) {
+      if (isHost) broadcastSystemMessage(`${conn.username} 离开了房间`);
+    } else if (isHost) {
       broadcastSystemMessage('有用户离开了房间');
-      saveSystemMessage('有用户离开了房间');
     }
     
-    // 更新用户数量
-    updateUserCount();
-    broadcastUserCount();
-    broadcastUserList();
+    if (isHost) {
+      updateUserCount();
+      broadcastUserCount();
+    }
   });
 }
 
-// Message handling
 function sendMessage() {
   const input = document.getElementById('messageInput');
   const content = input.value.trim();
   
-  if (content && !isRoomPaused) {
-    // 显示自己的消息
+  if (content) {
     addMessage(username, content, 'sent');
-    saveMessage(username, content, 'sent');
     
-    // 发送消息
     if (isHost) {
       // 房主直接广播给所有客户端
       broadcastMessage(username, content);
     } else {
-      // 客户端发送给房主(由房主负责广播)
+      // 客户端只发送给房主
       connections.forEach(conn => {
         if (conn.open) {
           conn.send({
@@ -1012,62 +945,11 @@ function broadcastUserCount() {
   });
 }
 
-function broadcastUserList() {
-  connections.forEach(conn => {
-    if (conn.open) {
-      conn.send({
-        type: 'user-list',
-        users: roomUsers
-      });
-    }
-  });
-}
-
 function updateUserCount() {
   const count = isHost ? connections.length + 1 : userCount;
   document.getElementById('userCount').textContent = count;
 }
 
-function updateUserList() {
-  // 这里可以添加更新用户列表UI的逻辑
-  console.log('当前用户列表:', roomUsers);
-}
-
-// Message storage
-function saveMessage(sender, content, direction) {
-  savedMessages.push({
-    type: 'message',
-    sender: sender,
-    content: content,
-    direction: direction,
-    timestamp: new Date().getTime()
-  });
-  localStorage.setItem('quickchat-messages', JSON.stringify(savedMessages));
-}
-
-function saveSystemMessage(content) {
-  savedMessages.push({
-    type: 'system',
-    content: content,
-    timestamp: new Date().getTime()
-  });
-  localStorage.setItem('quickchat-messages', JSON.stringify(savedMessages));
-}
-
-function getSavedMessages() {
-  const saved = localStorage.getItem('quickchat-messages');
-  if (saved) {
-    return JSON.parse(saved);
-  }
-  return [];
-}
-
-function clearSavedMessages() {
-  savedMessages = [];
-  localStorage.removeItem('quickchat-messages');
-}
-
-// UI functions
 function addMessage(sender, text, type) {
   const msgDiv = document.createElement('div');
   msgDiv.classList.add('message', type);
@@ -1112,10 +994,9 @@ function leaveRoom() {
     connections = [];
   }
   
-  localStorage.removeItem('quickchat-roomId');
-  localStorage.removeItem('quickchat-isHost');
-  localStorage.removeItem('quickchat-roomPassword');
-  clearSavedMessages();
+  localStorage.removeItem('roomId');
+  localStorage.removeItem('isHost');
+  localStorage.removeItem('roomPassword');
   
   location.reload();
 }
