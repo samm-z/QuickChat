@@ -1,79 +1,287 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>多人聊天室</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    #chat { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    #messages { list-style: none; padding: 0; max-height: 400px; overflow-y: auto; }
-    #messages li { margin-bottom: 10px; padding: 8px; background: #e0e0e0; border-radius: 4px; }
-    #messages li span { font-weight: bold; }
-    #nickname, #message { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
-    #send { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    #send:hover { background: #45a049; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Glow 聊天室</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        /* 基础样式 + 毛玻璃效果 */
+        :root {
+            --primary: #6e48aa;
+            --secondary: #9d50bb;
+            --text: #f0f0f0;
+            --bg: #121212;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('https://source.unsplash.com/random/1920x1080/?abstract') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 毛玻璃容器 */
+        .glass-container {
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 头部样式 */
+        .chat-header {
+            padding: 15px 20px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        /* 消息区域 */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+        }
+        
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 3px;
+        }
+        
+        /* 单条消息样式 */
+        .message {
+            margin-bottom: 15px;
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.4;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .received {
+            background: rgba(255, 255, 255, 0.1);
+            border-top-left-radius: 5px;
+            align-self: flex-start;
+        }
+        
+        .sent {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-top-right-radius: 5px;
+            align-self: flex-end;
+            color: white;
+        }
+        
+        /* 输入区域 */
+        .chat-input-container {
+            display: flex;
+            padding: 15px;
+            background: rgba(30, 30, 30, 0.7);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        #messageInput:focus {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        #sendButton {
+            margin-left: 10px;
+            padding: 0 20px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        #sendButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(110, 72, 170, 0.4);
+        }
+        
+        /* 房间ID提示 */
+        .room-info {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .room-info span {
+            font-weight: bold;
+            color: #9d50bb;
+            word-break: break-all;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .glass-container {
+                width: 95%;
+                height: 90vh;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="glass-container">
+        <div class="chat-header">
+            🌌 Neon Glow 聊天室
+        </div>
+        
+        <div class="room-info">
+            房间ID: <span id="roomIdDisplay">正在生成...</span>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <!-- 消息会动态添加到这里 -->
+        </div>
+        
+        <div class="chat-input-container">
+            <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
+            <button id="sendButton" onclick="sendMessage()">发送</button>
+        </div>
+    </div>
 
-<div id="chat">
-  <h2>Realtime Chat Room</h2>
-  <input type="text" id="nickname" placeholder="Enter your nickname"><br>
-  <input type="text" id="message" placeholder="Type a message">
-  <button id="send">Send</button>
-
-  <ul id="messages"></ul>
-</div>
-
-<script>
-  // 配置 (我提供的测试firebase项目)
-  const firebaseConfig = {
-    apiKey: "AIzaSyCWJ0z5OwS7uYoB9UjIFUjNz9sJSzv_dNE",
-    authDomain: "test-chatgpt-2025.firebaseapp.com",
-    databaseURL: "https://test-chatgpt-2025-default-rtdb.firebaseio.com",
-    projectId: "test-chatgpt-2025",
-    storageBucket: "test-chatgpt-2025.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdefg"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  const nicknameInput = document.getElementById('nickname');
-  const messageInput = document.getElementById('message');
-  const sendButton = document.getElementById('send');
-  const messagesList = document.getElementById('messages');
-
-  sendButton.addEventListener('click', sendMessage);
-  messageInput.addEventListener('keypress', e => {
-    if (e.key === 'Enter') sendMessage();
-  });
-
-  function sendMessage() {
-    const nickname = nicknameInput.value.trim();
-    const message = messageInput.value.trim();
-    if (!nickname) {
-      alert('Please enter a nickname.');
-      return;
-    }
-    if (!message) return;
-
-    db.ref('messages').push({ nickname, message });
-    messageInput.value = '';
-  }
-
-  db.ref('messages').limitToLast(100).on('child_added', snapshot => {
-    const { nickname, message } = snapshot.val();
-    const li = document.createElement('li');
-    li.innerHTML = `<span>${nickname}:</span> ${message}`;
-    messagesList.appendChild(li);
-    messagesList.scrollTop = messagesList.scrollHeight;
-  });
-</script>
-
+    <script>
+        // 生成或获取房间ID
+        const roomId = location.hash.substring(1) || Math.random().toString(36).substring(2, 10);
+        document.getElementById('roomIdDisplay').textContent = roomId;
+        
+        // 如果没有hash，设置当前URL
+        if (!location.hash) {
+            location.hash = roomId;
+            history.replaceState(null, null, ' '); // 清除历史记录
+        }
+        
+        // 初始化Peer
+        const peer = new Peer();
+        let conn;
+        
+        // 当Peer连接就绪
+        peer.on('open', (id) => {
+            console.log('我的Peer ID:', id);
+            
+            // 如果是第一个进入房间的人，等待连接
+            if (location.hash === `#${roomId}`) {
+                addSystemMessage('等待其他人加入... 请分享此链接: ' + location.href);
+                
+                peer.on('connection', (connection) => {
+                    conn = connection;
+                    setupConnection();
+                    addSystemMessage('对方已连接!');
+                });
+            } 
+            // 否则主动连接对方
+            else {
+                conn = peer.connect(roomId);
+                setupConnection();
+                addSystemMessage('已连接到对方!');
+            }
+        });
+        
+        // 设置连接事件
+        function setupConnection() {
+            conn.on('data', (data) => {
+                addMessage(data, 'received');
+            });
+            
+            conn.on('close', () => {
+                addSystemMessage('对方已断开连接');
+            });
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message && conn) {
+                conn.send(message);
+                addMessage(message, 'sent');
+                input.value = '';
+            }
+        }
+        
+        // 添加消息到界面
+        function addMessage(text, type) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            
+            messageDiv.classList.add('message', type);
+            messageDiv.textContent = text;
+            messagesDiv.appendChild(messageDiv);
+            
+            // 滚动到底部
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        // 添加系统消息
+        function addSystemMessage(text) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const systemDiv = document.createElement('div');
+            
+            systemDiv.style.textAlign = 'center';
+            systemDiv.style.margin = '15px 0';
+            systemDiv.style.color = 'rgba(255, 255, 255, 0.6)';
+            systemDiv.style.fontSize = '13px';
+            systemDiv.textContent = text;
+            
+            messagesDiv.appendChild(systemDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        // 回车发送消息
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
 </body>
 </html>
