@@ -593,15 +593,16 @@ let connections = [];
 let roomId;
 let isHost = false;
 let roomPassword = null;
-let username = "用户" + Math.floor(Math.random() * 1000); // 随机用户名
-let userCount = 1; // 当前用户数量
+let username = localStorage.getItem('quickchat-username') || "用户" + Math.floor(Math.random() * 1000);
+let userCount = 1;
+let roomUsers = [];
+let isRoomPaused = false;
 
 // Theme handling
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
   
-  // Update icon
   const themeToggle = document.getElementById('themeToggle');
   if (theme === 'dark') {
     themeToggle.classList.remove('fa-sun');
@@ -618,30 +619,25 @@ function toggleTheme() {
   setTheme(newTheme);
 }
 
-// Check for saved theme preference or use preferred color scheme
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
-  
   if (savedTheme) {
     setTheme(savedTheme);
   } else {
-    // Check for system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setTheme(prefersDark ? 'dark' : 'light');
   }
 }
 
-// Initialize theme
 initTheme();
 
-// Listen for system theme changes
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   if (!localStorage.getItem('theme')) {
     setTheme(e.matches ? 'dark' : 'light');
   }
 });
 
-// 显示和隐藏创建房间选项
+// Room creation and joining
 function showCreateRoomOptions() {
   document.getElementById('createRoomOptions').style.display = 'block';
 }
@@ -656,7 +652,6 @@ function cancelCreateRoom() {
 function togglePasswordInput() {
   const isChecked = document.getElementById('passwordCheckbox').checked;
   const passwordInput = document.getElementById('passwordInput');
-  
   if (isChecked) {
     passwordInput.classList.add('active');
   } else {
@@ -664,11 +659,10 @@ function togglePasswordInput() {
   }
 }
 
-// 检查是否有保存的房间信息
-if (localStorage.getItem('roomId')) {
-  roomId = localStorage.getItem('roomId');
-  isHost = localStorage.getItem('isHost') === 'true';
-  roomPassword = localStorage.getItem('roomPassword');
+if (localStorage.getItem('quickchat-roomId')) {
+  roomId = localStorage.getItem('quickchat-roomId');
+  isHost = localStorage.getItem('quickchat-isHost') === 'true';
+  roomPassword = localStorage.getItem('quickchat-roomPassword');
   initPeer();
 }
 
@@ -676,39 +670,30 @@ function createRoom() {
   roomId = Math.floor(1000 + Math.random() * 9000).toString();
   isHost = true;
   
-  // 获取密码（如果设置了）
   if (document.getElementById('passwordCheckbox').checked) {
     roomPassword = document.getElementById('roomPassword').value;
   } else {
     roomPassword = null;
   }
   
-  // 保存房间信息
-  localStorage.setItem('roomId', roomId);
-  localStorage.setItem('isHost', 'true');
+  localStorage.setItem('quickchat-roomId', roomId);
+  localStorage.setItem('quickchat-isHost', 'true');
   if (roomPassword) {
-    localStorage.setItem('roomPassword', roomPassword);
+    localStorage.setItem('quickchat-roomPassword', roomPassword);
   } else {
-    localStorage.removeItem('roomPassword');
+    localStorage.removeItem('quickchat-roomPassword');
   }
   
   initPeer();
-  
-  // 隐藏创建房间选项
   cancelCreateRoom();
 }
 
 function showJoinRoomInput() {
   const floatingDiv = document.getElementById('floatingDiv');
   floatingDiv.style.display = 'block';
-  // 触发重排以便动画生效
   void floatingDiv.offsetWidth;
   floatingDiv.classList.add('active');
-  
-  // 默认显示密码输入框，简化流程
   document.getElementById('joinPasswordInput').classList.add('active');
-  
-  // 聚焦输入框
   setTimeout(() => {
     document.getElementById('joinRoomInput').focus();
   }, 300);
@@ -717,17 +702,13 @@ function showJoinRoomInput() {
 function hideJoinRoomInput() {
   const floatingDiv = document.getElementById('floatingDiv');
   floatingDiv.classList.remove('active');
-  
-  // 等待动画完成后隐藏元素
   setTimeout(() => {
     floatingDiv.style.display = 'none';
-    // 重置输入框
     document.getElementById('joinRoomInput').value = '';
     document.getElementById('joinRoomPassword').value = '';
   }, 400);
 }
 
-// 直接加入房间，简化流程
 function joinRoom() {
   const input = document.getElementById('joinRoomInput').value.trim();
   
@@ -736,32 +717,29 @@ function joinRoom() {
     isHost = false;
     roomPassword = document.getElementById('joinRoomPassword').value.trim();
     
-    // 保存房间信息
-    localStorage.setItem('roomId', roomId);
-    localStorage.setItem('isHost', 'false');
+    localStorage.setItem('quickchat-roomId', roomId);
+    localStorage.setItem('quickchat-isHost', 'false');
     if (roomPassword) {
-      localStorage.setItem('roomPassword', roomPassword);
+      localStorage.setItem('quickchat-roomPassword', roomPassword);
     } else {
-      localStorage.removeItem('roomPassword');
+      localStorage.removeItem('quickchat-roomPassword');
     }
     
     initPeer();
     hideJoinRoomInput();
   } else {
-    // 输入错误时的视觉反馈
     const inputEl = document.getElementById('joinRoomInput');
     inputEl.style.borderColor = '#e53e3e';
     inputEl.style.boxShadow = '0 0 0 2px rgba(229, 62, 62, 0.2)';
-    
     setTimeout(() => {
       inputEl.style.borderColor = '';
       inputEl.style.boxShadow = '';
     }, 1000);
-    
     alert('请输入正确的四位房间号');
   }
 }
 
+// PeerJS connection handling
 function initPeer() {
   document.getElementById('menu').classList.remove('active');
   document.getElementById('chat').classList.add('active');
@@ -769,37 +747,30 @@ function initPeer() {
   updateUserCount();
 
   if (isHost) {
-    // 主持人使用房间ID作为自己的ID
     peer = new Peer(roomId);
     
     peer.on('open', () => {
       addSystemMessage('房间创建成功，等待其他用户加入...');
     });
     
-    // 主机处理新连接
     peer.on('connection', (conn) => {
       handleNewConnection(conn);
     });
   } else {
-    // 普通用户生成随机ID
     peer = new Peer();
     
     peer.on('open', (id) => {
-      // 连接到房主
       const conn = peer.connect(roomId, {
         reliable: true,
         metadata: { username: username }
       });
       
       conn.on('open', () => {
-        // 发送认证信息
         conn.send({
           type: 'auth',
           password: roomPassword,
           username: username
         });
-        
-        // 保存连接
         connections.push(conn);
         setupConnection(conn);
       });
@@ -822,34 +793,24 @@ function initPeer() {
     }
   });
   
-  // 添加Enter键发送消息的事件监听
   document.getElementById('messageInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      sendMessage();
-    }
+    if (e.key === 'Enter') sendMessage();
   });
   
-  // 添加Enter键加入房间的事件监听
   document.getElementById('joinRoomInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      joinRoom();
-    }
+    if (e.key === 'Enter') joinRoom();
   });
   
   document.getElementById('joinRoomPassword').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      joinRoom();
-    }
+    if (e.key === 'Enter') joinRoom();
   });
 }
 
-// 处理新连接
+// Fixed connection handling to prevent message duplication
 function handleNewConnection(conn) {
   conn.on('open', () => {
-    // 等待认证
     conn.on('data', (data) => {
       if (data.type === 'auth') {
-        // 检查密码
         if (roomPassword && data.password !== roomPassword) {
           conn.send({
             type: 'auth-result',
@@ -860,42 +821,35 @@ function handleNewConnection(conn) {
           return;
         }
         
-        // 认证成功
         conn.send({
           type: 'auth-result',
           success: true,
-          connectedUsers: connections.length + 1 // 包括主持人自己
+          connectedUsers: connections.length + 1
         });
         
-        // 保存连接和用户名
         conn.username = data.username;
         connections.push(conn);
         setupConnection(conn);
         
-        // 通知所有人有新用户加入
-        broadcastSystemMessage(`${conn.username} 加入了房间`);
-        updateUserCount();
-        broadcastUserCount();
-      } else if (data.type === 'message') {
-        // 收到消息，显示并转发给其他人
-        addMessage(data.sender, data.content, 'received');
-        broadcastMessage(data.sender, data.content, conn);
+        // Only broadcast system message from host
+        if (isHost) {
+          broadcastSystemMessage(`${data.username} 加入了房间`);
+          updateUserCount();
+          broadcastUserCount();
+        }
       }
+      // Remove the message forwarding logic here to prevent duplication
     });
   });
 }
 
 function setupConnection(conn) {
   conn.on('data', (data) => {
-    // 根据数据类型处理
     if (data.type === 'message') {
-      // 收到消息，显示
       addMessage(data.sender, data.content, 'received');
     } else if (data.type === 'system') {
-      // 系统消息
       addSystemMessage(data.content);
     } else if (data.type === 'auth-result') {
-      // 认证结果
       if (data.success) {
         addSystemMessage('连接成功，可以开始聊天了');
         userCount = data.connectedUsers;
@@ -905,46 +859,41 @@ function setupConnection(conn) {
         setTimeout(leaveRoom, 2000);
       }
     } else if (data.type === 'user-count') {
-      // 更新用户数量
       userCount = data.count;
       updateUserCount();
     }
   });
   
   conn.on('close', () => {
-    // 从连接列表中移除
     const index = connections.indexOf(conn);
-    if (index > -1) {
-      connections.splice(index, 1);
-    }
+    if (index > -1) connections.splice(index, 1);
     
-    // 通知有用户离开
     if (conn.username) {
-      broadcastSystemMessage(`${conn.username} 离开了房间`);
-    } else {
+      if (isHost) broadcastSystemMessage(`${conn.username} 离开了房间`);
+    } else if (isHost) {
       broadcastSystemMessage('有用户离开了房间');
     }
     
-    // 更新用户数量
-    updateUserCount();
-    broadcastUserCount();
+    if (isHost) {
+      updateUserCount();
+      broadcastUserCount();
+    }
   });
 }
 
-// 发送消息给所有人
+// Message handling functions
 function sendMessage() {
   const input = document.getElementById('messageInput');
   const content = input.value.trim();
   
   if (content) {
-    // 显示自己的消息
     addMessage(username, content, 'sent');
     
-    // 发送给所有连接
     if (isHost) {
+      // Host sends directly to all clients without forwarding
       broadcastMessage(username, content);
     } else {
-      // 非主持人，发送给主持人
+      // Client sends only to host
       connections.forEach(conn => {
         if (conn.open) {
           conn.send({
@@ -956,26 +905,24 @@ function sendMessage() {
       });
     }
     
-    // 清空输入框并聚焦
     input.value = '';
     input.focus();
   }
 }
 
-// 主持人向所有人广播消息
 function broadcastMessage(sender, content, exclude = null) {
   connections.forEach(conn => {
     if (conn.open && conn !== exclude) {
       conn.send({
         type: 'message',
         sender: sender,
-        content: content
+        content: content,
+        isFromHost: isHost // Add flag to identify host messages
       });
     }
   });
 }
 
-// 广播系统消息
 function broadcastSystemMessage(content) {
   connections.forEach(conn => {
     if (conn.open) {
@@ -987,43 +934,37 @@ function broadcastSystemMessage(content) {
   });
 }
 
-// 广播用户数量
 function broadcastUserCount() {
   connections.forEach(conn => {
     if (conn.open) {
       conn.send({
         type: 'user-count',
-        count: connections.length + 1 // 包括主持人
+        count: connections.length + 1
       });
     }
   });
 }
 
-// 更新用户计数显示
 function updateUserCount() {
   const count = isHost ? connections.length + 1 : userCount;
   document.getElementById('userCount').textContent = count;
 }
 
-// 添加消息到聊天区域
 function addMessage(sender, text, type) {
   const msgDiv = document.createElement('div');
   msgDiv.classList.add('message', type);
   
-  // 添加发送者名称
   const senderSpan = document.createElement('span');
   senderSpan.classList.add('sender');
   senderSpan.textContent = sender;
   msgDiv.appendChild(senderSpan);
   
-  // 添加消息内容
   const contentSpan = document.createElement('span');
   contentSpan.textContent = text;
   msgDiv.appendChild(contentSpan);
   
   document.getElementById('chatMessages').appendChild(msgDiv);
   
-  // 添加消息动画
   setTimeout(() => {
     msgDiv.classList.add('message-animation');
   }, 10);
@@ -1053,9 +994,9 @@ function leaveRoom() {
     connections = [];
   }
   
-  localStorage.removeItem('roomId');
-  localStorage.removeItem('isHost');
-  localStorage.removeItem('roomPassword');
+  localStorage.removeItem('quickchat-roomId');
+  localStorage.removeItem('quickchat-isHost');
+  localStorage.removeItem('quickchat-roomPassword');
   
   location.reload();
 }
