@@ -1,287 +1,719 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Glow 聊天室</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <style>
-        /* 基础样式 + 毛玻璃效果 */
-        :root {
-            --primary: #6e48aa;
-            --secondary: #9d50bb;
-            --text: #f0f0f0;
-            --bg: #121212;
-        }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: url('https://source.unsplash.com/random/1920x1080/?abstract') no-repeat center center fixed;
-            background-size: cover;
-            color: var(--text);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        /* 毛玻璃容器 */
-        .glass-container {
-            width: 90%;
-            max-width: 800px;
-            height: 80vh;
-            background: rgba(20, 20, 20, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* 头部样式 */
-        .chat-header {
-            padding: 15px 20px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            color: white;
-            text-align: center;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        
-        /* 消息区域 */
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary) transparent;
-        }
-        
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-thumb {
-            background-color: var(--primary);
-            border-radius: 3px;
-        }
-        
-        /* 单条消息样式 */
-        .message {
-            margin-bottom: 15px;
-            max-width: 70%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            line-height: 1.4;
-            position: relative;
-            animation: fadeIn 0.3s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .received {
-            background: rgba(255, 255, 255, 0.1);
-            border-top-left-radius: 5px;
-            align-self: flex-start;
-        }
-        
-        .sent {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-top-right-radius: 5px;
-            align-self: flex-end;
-            color: white;
-        }
-        
-        /* 输入区域 */
-        .chat-input-container {
-            display: flex;
-            padding: 15px;
-            background: rgba(30, 30, 30, 0.7);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        #messageInput {
-            flex: 1;
-            padding: 12px 15px;
-            border: none;
-            border-radius: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 16px;
-            outline: none;
-            transition: all 0.3s;
-        }
-        
-        #messageInput:focus {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        #sendButton {
-            margin-left: 10px;
-            padding: 0 20px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-        
-        #sendButton:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(110, 72, 170, 0.4);
-        }
-        
-        /* 房间ID提示 */
-        .room-info {
-            text-align: center;
-            padding: 10px;
-            font-size: 14px;
-            background: rgba(0, 0, 0, 0.3);
-        }
-        
-        .room-info span {
-            font-weight: bold;
-            color: #9d50bb;
-            word-break: break-all;
-        }
-        
-        /* 响应式调整 */
-        @media (max-width: 600px) {
-            .glass-container {
-                width: 95%;
-                height: 90vh;
-            }
-            
-            .message {
-                max-width: 85%;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>简约聊天室</title>
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      /* Light theme */
+      --bg-primary: #f0f4f8;
+      --bg-secondary: #e2e8f0;
+      --card-bg: #ffffff;
+      --text-primary: #2d3748;
+      --text-secondary: #4a5568;
+      --accent-primary: #3182ce;
+      --accent-secondary: #4299e1;
+      --border-color: #e2e8f0;
+      --sent-bg: #3182ce;
+      --sent-text: #ffffff;
+      --received-bg: #e2e8f0;
+      --received-text: #2d3748;
+      --system-bg: #edf2f7;
+      --system-text: #718096;
+      --input-bg: #edf2f7;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] {
+      /* Dark theme */
+      --bg-primary: #1a202c;
+      --bg-secondary: #2d3748;
+      --card-bg: #2d3748;
+      --text-primary: #f7fafc;
+      --text-secondary: #e2e8f0;
+      --accent-primary: #4299e1;
+      --accent-secondary: #63b3ed;
+      --border-color: #4a5568;
+      --sent-bg: #4299e1;
+      --sent-text: #f7fafc;
+      --received-bg: #4a5568;
+      --received-text: #f7fafc;
+      --system-bg: #2d3748;
+      --system-text: #a0aec0;
+      --input-bg: #4a5568;
+      --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--text-primary);
+      transition: background-color 0.3s ease;
+    }
+
+    .container {
+      width: 95%;
+      max-width: 800px; /* Increased from 600px */
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 5px 15px var(--shadow-color);
+      display: flex;
+      flex-direction: column;
+      min-height: 85vh; /* Increased from 80vh */
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 0.6s forwards cubic-bezier(0.22, 1, 0.36, 1);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+    }
+
+    /* Theme toggle switch */
+    .theme-switch {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .theme-switch-icon {
+      font-size: 1.2rem;
+      color: var(--accent-primary);
+      cursor: pointer;
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
+
+    .theme-switch-icon:hover {
+      color: var(--accent-secondary);
+      transform: scale(1.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      transition: color 0.3s ease;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 30px;
+      position: relative;
+      padding-bottom: 10px;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: var(--accent-primary);
+      border-radius: 3px;
+      transition: background-color 0.3s ease;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .menu, .chat {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      gap: 15px;
+    }
+
+    .menu.active, .chat.active {
+      display: flex;
+      animation: fadeScale 0.5s forwards cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes fadeScale {
+      0% {
+        opacity: 0;
+        transform: scale(0.98);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px 16px; /* Reduced height */
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    input {
+      background: var(--input-bg);
+      color: var(--text-primary);
+      outline: none;
+      border: 1px solid var(--border-color);
+    }
+
+    input:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+    }
+
+    button {
+      background: var(--accent-primary);
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button:hover {
+      background: var(--accent-secondary);
+      transform: translateY(-2px);
+      box-shadow: 0 3px 8px rgba(66, 153, 225, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .chat-messages {
+      flex: 1;
+      margin: 10px 0;
+      padding: 15px;
+      overflow-y: auto;
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border: 1px solid var(--border-color);
+      scroll-behavior: smooth;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 3px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: var(--accent-primary);
+      border-radius: 3px;
+    }
+
+    /* 消息输入区域样式 */
+    .message-input-container {
+      display: flex;
+      gap: 10px;
+      margin: 8px 0;
+    }
+
+    .message-input-container input {
+      flex: 1;
+      margin: 0;
+    }
+
+    .message-input-container button {
+      width: 60px;
+      margin: 0;
+      height: 40px; /* Fixed height */
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-break: break-word;
+      opacity: 0;
+      transform: translateY(10px);
+      position: relative;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* 消息动画 */
+    @keyframes messageFadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-animation {
+      animation: messageFadeIn 0.4s forwards cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .sent {
+      background: var(--sent-bg);
+      color: var(--sent-text);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .received {
+      background: var(--received-bg);
+      color: var(--received-text);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .system {
+      font-size: 13px;
+      text-align: center;
+      color: var(--system-text);
+      margin: 8px 0;
+      padding: 6px 12px;
+      background: var(--system-bg);
+      border-radius: 15px;
+      width: fit-content;
+      align-self: center;
+      animation: systemFadeIn 0.5s forwards cubic-bezier(0.22, 1, 0.36, 1);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    @keyframes systemFadeIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .exit-button {
+      background: #e53e3e;
+      margin-top: 10px;
+    }
+
+    .exit-button:hover {
+      background: #c53030;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+        min-height: 90vh;
+      }
+      
+      h1 {
+        font-size: 1.6rem;
+      }
+      
+      input, button {
+        font-size: 14px;
+        padding: 10px 14px;
+      }
+      
+      .message {
+        font-size: 14px;
+        max-width: 85%;
+      }
+
+      .theme-switch {
+        top: 15px;
+        right: 15px;
+      }
+    }
+
+    /* 漂浮输入框的样式 */
+    .floating-div {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      width: 320px;
+      padding: 25px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px var(--shadow-color);
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1), 
+                  background-color 0.3s ease, 
+                  box-shadow 0.3s ease;
+    }
+
+    .floating-div.active {
+      display: block;
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .floating-div h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      font-size: 1.3rem;
+      position: relative;
+      padding-bottom: 8px;
+      transition: color 0.3s ease;
+    }
+
+    .floating-div h3::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 2px;
+      background: var(--accent-primary);
+      transition: background-color 0.3s ease;
+    }
+
+    .floating-div input {
+      margin-bottom: 15px;
+    }
+
+    .floating-div .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s, background-color 0.3s ease, color 0.3s ease;
+      padding: 0;
+    }
+
+    .floating-div .close-btn:hover {
+      background: var(--accent-primary);
+      color: white;
+      transform: rotate(90deg);
+    }
+
+    /* 页面加载时容器渐变动画 */
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="glass-container">
-        <div class="chat-header">
-            🌌 Neon Glow 聊天室
-        </div>
-        
-        <div class="room-info">
-            房间ID: <span id="roomIdDisplay">正在生成...</span>
-        </div>
-        
-        <div class="chat-messages" id="chatMessages">
-            <!-- 消息会动态添加到这里 -->
-        </div>
-        
-        <div class="chat-input-container">
-            <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
-            <button id="sendButton" onclick="sendMessage()">发送</button>
-        </div>
-    </div>
 
-    <script>
-        // 生成或获取房间ID
-        const roomId = location.hash.substring(1) || Math.random().toString(36).substring(2, 10);
-        document.getElementById('roomIdDisplay').textContent = roomId;
-        
-        // 如果没有hash，设置当前URL
-        if (!location.hash) {
-            location.hash = roomId;
-            history.replaceState(null, null, ' '); // 清除历史记录
-        }
-        
-        // 初始化Peer
-        const peer = new Peer();
-        let conn;
-        
-        // 当Peer连接就绪
-        peer.on('open', (id) => {
-            console.log('我的Peer ID:', id);
-            
-            // 如果是第一个进入房间的人，等待连接
-            if (location.hash === `#${roomId}`) {
-                addSystemMessage('等待其他人加入... 请分享此链接: ' + location.href);
-                
-                peer.on('connection', (connection) => {
-                    conn = connection;
-                    setupConnection();
-                    addSystemMessage('对方已连接!');
-                });
-            } 
-            // 否则主动连接对方
-            else {
-                conn = peer.connect(roomId);
-                setupConnection();
-                addSystemMessage('已连接到对方!');
-            }
-        });
-        
-        // 设置连接事件
-        function setupConnection() {
-            conn.on('data', (data) => {
-                addMessage(data, 'received');
-            });
-            
-            conn.on('close', () => {
-                addSystemMessage('对方已断开连接');
-            });
-        }
-        
-        // 发送消息
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
-            if (message && conn) {
-                conn.send(message);
-                addMessage(message, 'sent');
-                input.value = '';
-            }
-        }
-        
-        // 添加消息到界面
-        function addMessage(text, type) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            
-            messageDiv.classList.add('message', type);
-            messageDiv.textContent = text;
-            messagesDiv.appendChild(messageDiv);
-            
-            // 滚动到底部
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-        
-        // 添加系统消息
-        function addSystemMessage(text) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const systemDiv = document.createElement('div');
-            
-            systemDiv.style.textAlign = 'center';
-            systemDiv.style.margin = '15px 0';
-            systemDiv.style.color = 'rgba(255, 255, 255, 0.6)';
-            systemDiv.style.fontSize = '13px';
-            systemDiv.textContent = text;
-            
-            messagesDiv.appendChild(systemDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-        
-        // 回车发送消息
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-    </script>
+<div class="container">
+  <!-- Theme toggle switch -->
+  <div class="theme-switch">
+    <i class="fas fa-sun theme-switch-icon" id="themeToggle" onclick="toggleTheme()"></i>
+  </div>
+
+  <div class="menu active" id="menu">
+    <h1><i class="fas fa-comments"></i> 简约聊天室</h1>
+    <div class="menu-buttons">
+      <button onclick="createRoom()"><i class="fas fa-plus-circle"></i> 创建房间</button>
+      <button onclick="showJoinRoomInput()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
+    </div>
+  </div>
+
+  <div class="chat" id="chat">
+    <h2><i class="fas fa-users"></i> <span id="roomInfo">房间号: </span></h2>
+    <div class="chat-messages" id="chatMessages"></div>
+    
+    <!-- 消息输入区域 -->
+    <div class="message-input-container">
+      <input type="text" id="messageInput" placeholder="输入消息...">
+      <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    
+    <button onclick="leaveRoom()" class="exit-button"><i class="fas fa-sign-out-alt"></i> 退出房间</button>
+  </div>
+</div>
+
+<!-- 漂浮加入房间的输入框和按钮 -->
+<div class="floating-div" id="floatingDiv">
+  <button class="close-btn" onclick="hideJoinRoomInput()"><i class="fas fa-times"></i></button>
+  <h3><i class="fas fa-door-open"></i> 加入聊天房间</h3>
+  <input type="text" id="joinRoomInput" placeholder="输入房间号 (4位数)">
+  <button onclick="joinRoom()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
+</div>
+
+<script>
+let peer;
+let connections = [];
+let roomId;
+let isHost = false;
+
+// Theme handling
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  
+  // Update icon
+  const themeToggle = document.getElementById('themeToggle');
+  if (theme === 'dark') {
+    themeToggle.classList.remove('fa-sun');
+    themeToggle.classList.add('fa-moon');
+  } else {
+    themeToggle.classList.remove('fa-moon');
+    themeToggle.classList.add('fa-sun');
+  }
+}
+
+function toggleTheme() {
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  setTheme(newTheme);
+}
+
+// Check for saved theme preference or use preferred color scheme
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  
+  if (savedTheme) {
+    setTheme(savedTheme);
+  } else {
+    // Check for system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(prefersDark ? 'dark' : 'light');
+  }
+}
+
+// Initialize theme
+initTheme();
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (!localStorage.getItem('theme')) {
+    setTheme(e.matches ? 'dark' : 'light');
+  }
+});
+
+if (localStorage.getItem('roomId')) {
+  roomId = localStorage.getItem('roomId');
+  isHost = localStorage.getItem('isHost') === 'true';
+  initPeer();
+}
+
+function createRoom() {
+  roomId = Math.floor(1000 + Math.random() * 9000).toString();
+  isHost = true;
+  localStorage.setItem('roomId', roomId);
+  localStorage.setItem('isHost', 'true');
+  initPeer();
+}
+
+function showJoinRoomInput() {
+  const floatingDiv = document.getElementById('floatingDiv');
+  floatingDiv.style.display = 'block';
+  // 触发重排以便动画生效
+  void floatingDiv.offsetWidth;
+  floatingDiv.classList.add('active');
+  
+  // 聚焦输入框
+  setTimeout(() => {
+    document.getElementById('joinRoomInput').focus();
+  }, 300);
+}
+
+function hideJoinRoomInput() {
+  const floatingDiv = document.getElementById('floatingDiv');
+  floatingDiv.classList.remove('active');
+  
+  // 等待动画完成后隐藏元素
+  setTimeout(() => {
+    floatingDiv.style.display = 'none';
+  }, 400);
+}
+
+function joinRoom() {
+  const input = document.getElementById('joinRoomInput').value.trim();
+  if (input.length === 4) {
+    roomId = input;
+    isHost = false;
+    localStorage.setItem('roomId', roomId);
+    localStorage.setItem('isHost', 'false');
+    initPeer();
+    hideJoinRoomInput();
+  } else {
+    // 输入错误时的视觉反馈
+    const inputEl = document.getElementById('joinRoomInput');
+    inputEl.style.borderColor = '#e53e3e';
+    inputEl.style.boxShadow = '0 0 0 2px rgba(229, 62, 62, 0.2)';
+    
+    setTimeout(() => {
+      inputEl.style.borderColor = '';
+      inputEl.style.boxShadow = '';
+    }, 1000);
+    
+    alert('请输入正确的四位房间号');
+  }
+}
+
+function initPeer() {
+  document.getElementById('menu').classList.remove('active');
+  document.getElementById('chat').classList.add('active');
+  document.getElementById('roomInfo').textContent = `房间号: ${roomId}`;
+
+  if (isHost) {
+    peer = new Peer(roomId);
+    peer.on('open', () => {
+      addSystemMessage('房间创建成功，等待加入...');
+    });
+    peer.on('connection', (conn) => {
+      connections.push(conn);
+      setupConnection(conn);
+      addSystemMessage('新用户加入了房间');
+    });
+  } else {
+    peer = new Peer('user-' + Math.random().toString(36).substr(2, 5));
+    peer.on('open', () => {
+      const conn = peer.connect(roomId);
+      connections.push(conn);
+      setupConnection(conn);
+    });
+  }
+
+  peer.on('error', (err) => {
+    console.error(err);
+    addSystemMessage('连接错误: ' + err.type);
+  });
+  
+  // 添加Enter键发送消息的事件监听
+  document.getElementById('messageInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+  
+  // 添加Enter键加入房间的事件监听
+  document.getElementById('joinRoomInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      joinRoom();
+    }
+  });
+}
+
+function setupConnection(conn) {
+  conn.on('data', (data) => {
+    addMessage(data, 'received');
+  });
+  conn.on('open', () => {
+    addSystemMessage('连接成功，可以开始聊天了');
+  });
+  conn.on('close', () => {
+    addSystemMessage('有用户离开了房间');
+  });
+}
+
+function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const message = input.value.trim();
+  if (message) {
+    connections.forEach(conn => {
+      if (conn.open) {
+        conn.send(message);
+      }
+    });
+    addMessage(message, 'sent');
+    input.value = '';
+    
+    // 发送后聚焦输入框
+    input.focus();
+  }
+}
+
+function addMessage(text, type) {
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('message', type);
+  msgDiv.textContent = text;
+  document.getElementById('chatMessages').appendChild(msgDiv);
+  
+  // 添加消息动画
+  setTimeout(() => {
+    msgDiv.classList.add('message-animation');
+  }, 10);
+  
+  scrollToBottom();
+}
+
+function addSystemMessage(text) {
+  const sysDiv = document.createElement('div');
+  sysDiv.classList.add('system');
+  sysDiv.textContent = text;
+  document.getElementById('chatMessages').appendChild(sysDiv);
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  const div = document.getElementById('chatMessages');
+  div.scrollTop = div.scrollHeight;
+}
+
+function leaveRoom() {
+  if (peer) {
+    peer.destroy();
+    connections.forEach(conn => conn.close());
+  }
+  localStorage.removeItem('roomId');
+  localStorage.removeItem('isHost');
+  location.reload();
+}
+</script>
+
 </body>
 </html>
