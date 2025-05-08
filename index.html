@@ -597,6 +597,7 @@ let username = localStorage.getItem('quickchat-username') || "用户" + Math.flo
 let userCount = 1;
 let roomUsers = [];
 let isRoomPaused = false;
+let savedMessages = [];
 
 // Theme handling
 function setTheme(theme) {
@@ -751,6 +752,13 @@ function initPeer() {
     
     peer.on('open', () => {
       addSystemMessage('房间创建成功，等待其他用户加入...');
+      // 房主将自己添加到用户列表
+      roomUsers.push({
+        id: peer.id,
+        username: '房主',
+        isHost: true
+      });
+      updateUserList();
     });
     
     peer.on('connection', (conn) => {
@@ -762,17 +770,19 @@ function initPeer() {
     peer.on('open', (id) => {
       const conn = peer.connect(roomId, {
         reliable: true,
-        metadata: { username: username }
+        metadata: { 
+          username: username,
+          userId: id
+        }
       });
       
       conn.on('open', () => {
         conn.send({
           type: 'auth',
           password: roomPassword,
-          username: username
+          username: username,
+          userId: id
         });
-        connections.push(conn);
-        setupConnection(conn);
       });
       
       conn.on('error', (err) => {
@@ -806,11 +816,11 @@ function initPeer() {
   });
 }
 
-// Fixed connection handling to prevent message duplication
 function handleNewConnection(conn) {
   conn.on('open', () => {
     conn.on('data', (data) => {
       if (data.type === 'auth') {
+        // 检查密码
         if (roomPassword && data.password !== roomPassword) {
           conn.send({
             type: 'auth-result',
@@ -821,24 +831,43 @@ function handleNewConnection(conn) {
           return;
         }
         
+        // 认证成功
         conn.send({
           type: 'auth-result',
           success: true,
-          connectedUsers: connections.length + 1
+          connectedUsers: connections.length + 1,
+          messages: getSavedMessages()
         });
         
+        // 保存连接和用户信息
         conn.username = data.username;
+        conn.userId = data.userId;
         connections.push(conn);
         setupConnection(conn);
         
-        // Only broadcast system message from host
+        // 添加到用户列表
+        roomUsers.push({
+          id: data.userId,
+          username: data.username,
+          isHost: false
+        });
+        updateUserList();
+        
+        // 通知所有人有新用户加入
+        broadcastSystemMessage(`${data.username} 加入了房间`);
+        updateUserCount();
+        broadcastUserCount();
+        broadcastUserList();
+      } else if (data.type === 'message') {
+        // 收到消息，显示并保存
+        addMessage(data.sender, data.content, 'received');
+        saveMessage(data.sender, data.content, 'received');
+        
+        // 房主广播给其他客户端（排除发送者）
         if (isHost) {
-          broadcastSystemMessage(`${data.username} 加入了房间`);
-          updateUserCount();
-          broadcastUserCount();
+          broadcastMessage(data.sender, data.content, conn);
         }
       }
-      // Remove the message forwarding logic here to prevent duplication
     });
   });
 }
@@ -847,13 +876,35 @@ function setupConnection(conn) {
   conn.on('data', (data) => {
     if (data.type === 'message') {
       addMessage(data.sender, data.content, 'received');
+      saveMessage(data.sender, data.content, 'received');
     } else if (data.type === 'system') {
       addSystemMessage(data.content);
+      saveSystemMessage(data.content);
     } else if (data.type === 'auth-result') {
       if (data.success) {
         addSystemMessage('连接成功，可以开始聊天了');
         userCount = data.connectedUsers;
         updateUserCount();
+        
+        // 添加主持人到用户列表
+        roomUsers.push({
+          id: peer.id,
+          username: '房主',
+          isHost: true
+        });
+        
+        // 添加历史消息
+        if (data.messages && data.messages.length > 0) {
+          data.messages.forEach(msg => {
+            if (msg.type === 'message') {
+              addMessage(msg.sender, msg.content, msg.direction);
+            } else if (msg.type === 'system') {
+              addSystemMessage(msg.content);
+            }
+          });
+        }
+        
+        updateUserList();
       } else {
         addSystemMessage(`连接失败: ${data.message}`);
         setTimeout(leaveRoom, 2000);
@@ -861,39 +912,56 @@ function setupConnection(conn) {
     } else if (data.type === 'user-count') {
       userCount = data.count;
       updateUserCount();
+    } else if (data.type === 'user-list') {
+      roomUsers = data.users;
+      updateUserList();
     }
   });
   
   conn.on('close', () => {
+    // 从连接列表中移除
     const index = connections.indexOf(conn);
-    if (index > -1) connections.splice(index, 1);
+    if (index > -1) {
+      connections.splice(index, 1);
+    }
     
-    if (conn.username) {
-      if (isHost) broadcastSystemMessage(`${conn.username} 离开了房间`);
-    } else if (isHost) {
+    // 从用户列表中移除
+    const userIndex = roomUsers.findIndex(u => u.id === conn.userId);
+    if (userIndex > -1) {
+      const leftUsername = roomUsers[userIndex].username;
+      roomUsers.splice(userIndex, 1);
+      
+      // 通知有用户离开
+      broadcastSystemMessage(`${leftUsername} 离开了房间`);
+      saveSystemMessage(`${leftUsername} 离开了房间`);
+    } else {
       broadcastSystemMessage('有用户离开了房间');
+      saveSystemMessage('有用户离开了房间');
     }
     
-    if (isHost) {
-      updateUserCount();
-      broadcastUserCount();
-    }
+    // 更新用户数量
+    updateUserCount();
+    broadcastUserCount();
+    broadcastUserList();
   });
 }
 
-// Message handling functions
+// Message handling
 function sendMessage() {
   const input = document.getElementById('messageInput');
   const content = input.value.trim();
   
-  if (content) {
+  if (content && !isRoomPaused) {
+    // 显示自己的消息
     addMessage(username, content, 'sent');
+    saveMessage(username, content, 'sent');
     
+    // 发送消息
     if (isHost) {
-      // Host sends directly to all clients without forwarding
+      // 房主直接广播给所有客户端
       broadcastMessage(username, content);
     } else {
-      // Client sends only to host
+      // 客户端发送给房主(由房主负责广播)
       connections.forEach(conn => {
         if (conn.open) {
           conn.send({
@@ -916,8 +984,7 @@ function broadcastMessage(sender, content, exclude = null) {
       conn.send({
         type: 'message',
         sender: sender,
-        content: content,
-        isFromHost: isHost // Add flag to identify host messages
+        content: content
       });
     }
   });
@@ -945,11 +1012,62 @@ function broadcastUserCount() {
   });
 }
 
+function broadcastUserList() {
+  connections.forEach(conn => {
+    if (conn.open) {
+      conn.send({
+        type: 'user-list',
+        users: roomUsers
+      });
+    }
+  });
+}
+
 function updateUserCount() {
   const count = isHost ? connections.length + 1 : userCount;
   document.getElementById('userCount').textContent = count;
 }
 
+function updateUserList() {
+  // 这里可以添加更新用户列表UI的逻辑
+  console.log('当前用户列表:', roomUsers);
+}
+
+// Message storage
+function saveMessage(sender, content, direction) {
+  savedMessages.push({
+    type: 'message',
+    sender: sender,
+    content: content,
+    direction: direction,
+    timestamp: new Date().getTime()
+  });
+  localStorage.setItem('quickchat-messages', JSON.stringify(savedMessages));
+}
+
+function saveSystemMessage(content) {
+  savedMessages.push({
+    type: 'system',
+    content: content,
+    timestamp: new Date().getTime()
+  });
+  localStorage.setItem('quickchat-messages', JSON.stringify(savedMessages));
+}
+
+function getSavedMessages() {
+  const saved = localStorage.getItem('quickchat-messages');
+  if (saved) {
+    return JSON.parse(saved);
+  }
+  return [];
+}
+
+function clearSavedMessages() {
+  savedMessages = [];
+  localStorage.removeItem('quickchat-messages');
+}
+
+// UI functions
 function addMessage(sender, text, type) {
   const msgDiv = document.createElement('div');
   msgDiv.classList.add('message', type);
@@ -997,6 +1115,7 @@ function leaveRoom() {
   localStorage.removeItem('quickchat-roomId');
   localStorage.removeItem('quickchat-isHost');
   localStorage.removeItem('quickchat-roomPassword');
+  clearSavedMessages();
   
   location.reload();
 }
