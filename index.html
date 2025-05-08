@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>多人聊天室</title>
+  <title>QuickChat</title>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -73,7 +73,7 @@
       box-shadow: 0 5px 15px var(--shadow-color);
       display: flex;
       flex-direction: column;
-      height: 85vh; /* Fixed height instead of min-height */
+      height: 85vh;
       opacity: 0;
       transform: translateY(20px);
       animation: fadeIn 0.6s forwards cubic-bezier(0.22, 1, 0.36, 1);
@@ -81,7 +81,6 @@
       position: relative;
     }
 
-    /* Theme toggle switch */
     .theme-switch {
       position: absolute;
       top: 20px;
@@ -144,7 +143,7 @@
       flex-direction: column;
       flex: 1;
       gap: 15px;
-      height: 100%; /* Ensure full height */
+      height: 100%;
     }
 
     .menu.active, .chat.active {
@@ -152,14 +151,13 @@
       animation: fadeScale 0.5s forwards cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    /* Fixed layout for chat interface */
     .chat.active {
       display: flex;
       flex-direction: column;
     }
 
     .chat-header {
-      flex-shrink: 0; /* Don't shrink */
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -177,7 +175,7 @@
     }
 
     .chat-footer {
-      flex-shrink: 0; /* Don't shrink */
+      flex-shrink: 0;
       margin-top: 10px;
     }
 
@@ -244,10 +242,10 @@
     }
 
     .chat-messages {
-      flex: 1; /* Take up all available space */
+      flex: 1;
       margin: 10px 0;
       padding: 15px;
-      overflow-y: auto; /* Only this area scrolls */
+      overflow-y: auto;
       background: var(--bg-secondary);
       border-radius: 10px;
       display: flex;
@@ -256,7 +254,7 @@
       border: 1px solid var(--border-color);
       scroll-behavior: smooth;
       transition: background-color 0.3s ease, border-color 0.3s ease;
-      min-height: 0; /* Important for Firefox */
+      min-height: 0;
     }
 
     .chat-messages::-webkit-scrollbar {
@@ -273,7 +271,6 @@
       border-radius: 3px;
     }
 
-    /* 消息输入区域样式 */
     .message-input-container {
       display: flex;
       gap: 10px;
@@ -311,7 +308,6 @@
       opacity: 0.8;
     }
 
-    /* 消息动画 */
     @keyframes messageFadeIn {
       0% {
         opacity: 0;
@@ -375,7 +371,6 @@
       background: #c53030;
     }
 
-    /* 密码选项样式 */
     .password-option {
       margin-top: 15px;
       margin-bottom: 10px;
@@ -428,7 +423,6 @@
       }
     }
 
-    /* 漂浮输入框的样式 */
     .floating-div {
       display: none;
       position: fixed;
@@ -506,7 +500,6 @@
       transform: rotate(90deg);
     }
 
-    /* 页面加载时容器渐变动画 */
     @keyframes fadeIn {
       0% {
         opacity: 0;
@@ -520,7 +513,6 @@
   </style>
 </head>
 <body>
-
 <div class="container">
   <!-- Theme toggle switch -->
   <div class="theme-switch">
@@ -528,12 +520,12 @@
   </div>
 
   <div class="menu active" id="menu">
-    <h1><i class="fas fa-comments"></i> 多人聊天室</h1>
+    <h1><i class="fas fa-comments"></i> QuickChat</h1>
     <div class="menu-buttons">
       <button onclick="showCreateRoomOptions()"><i class="fas fa-plus-circle"></i> 创建房间</button>
       <button onclick="showJoinRoomInput()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
     </div>
-    
+
     <!-- 创建房间的选项 (初始隐藏) -->
     <div id="createRoomOptions" style="display: none;">
       <div class="password-option">
@@ -560,10 +552,10 @@
         <i class="fas fa-user"></i> <span id="userCount">1</span>
       </div>
     </div>
-    
+
     <!-- Scrollable message area -->
     <div class="chat-messages" id="chatMessages"></div>
-    
+
     <!-- Fixed footer with input and buttons -->
     <div class="chat-footer">
       <div class="message-input-container">
@@ -876,10 +868,11 @@ function handleNewConnection(conn) {
         broadcastSystemMessage(`${conn.username} 加入了房间`);
         updateUserCount();
         broadcastUserCount();
-      } else if (data.type === 'message') {
+      } else if (data.type === 'message' && !conn.processedMessage) {
         // 收到消息，显示并转发给其他人
         addMessage(data.sender, data.content, 'received');
         broadcastMessage(data.sender, data.content, conn);
+        conn.processedMessage = true; // 标记消息已处理
       }
     });
   });
@@ -888,9 +881,10 @@ function handleNewConnection(conn) {
 function setupConnection(conn) {
   conn.on('data', (data) => {
     // 根据数据类型处理
-    if (data.type === 'message') {
+    if (data.type === 'message' && !conn.processedMessage) {
       // 收到消息，显示
       addMessage(data.sender, data.content, 'received');
+      conn.processedMessage = true; // 标记消息已处理
     } else if (data.type === 'system') {
       // 系统消息
       addSystemMessage(data.content);
