@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QuickChat</title>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/localbase@1.5.0/dist/localbase.dev.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -25,6 +26,9 @@
       --system-text: #718096;
       --input-bg: #edf2f7;
       --shadow-color: rgba(0, 0, 0, 0.1);
+      --host-badge: #e53e3e;
+      --footer-text: #718096;
+      --success-color: #38a169;
     }
 
     [data-theme="dark"] {
@@ -45,6 +49,9 @@
       --system-text: #a0aec0;
       --input-bg: #4a5568;
       --shadow-color: rgba(0, 0, 0, 0.3);
+      --host-badge: #c53030;
+      --footer-text: #a0aec0;
+      --success-color: #48bb78;
     }
 
     * {
@@ -73,7 +80,7 @@
       box-shadow: 0 5px 15px var(--shadow-color);
       display: flex;
       flex-direction: column;
-      height: 85vh; /* Fixed height instead of min-height */
+      height: 85vh;
       opacity: 0;
       transform: translateY(20px);
       animation: fadeIn 0.6s forwards cubic-bezier(0.22, 1, 0.36, 1);
@@ -144,7 +151,7 @@
       flex-direction: column;
       flex: 1;
       gap: 15px;
-      height: 100%; /* Ensure full height */
+      height: 100%;
     }
 
     .menu.active, .chat.active {
@@ -159,7 +166,7 @@
     }
 
     .chat-header {
-      flex-shrink: 0; /* Don't shrink */
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -177,7 +184,7 @@
     }
 
     .chat-footer {
-      flex-shrink: 0; /* Don't shrink */
+      flex-shrink: 0;
       margin-top: 10px;
     }
 
@@ -243,11 +250,35 @@
       transform: translateY(0);
     }
 
+    /* 保存按钮动画 */
+    .save-success {
+      background-color: var(--success-color) !important;
+    }
+
+    .save-success i {
+      animation: checkBounce 0.6s ease;
+    }
+
+    @keyframes checkBounce {
+      0%, 100% {
+        transform: scale(1);
+      }
+      25% {
+        transform: scale(1.3);
+      }
+      50% {
+        transform: scale(0.9);
+      }
+      75% {
+        transform: scale(1.1);
+      }
+    }
+
     .chat-messages {
-      flex: 1; /* Take up all available space */
+      flex: 1;
       margin: 10px 0;
       padding: 15px;
-      overflow-y: auto; /* Only this area scrolls */
+      overflow-y: auto;
       background: var(--bg-secondary);
       border-radius: 10px;
       display: flex;
@@ -256,7 +287,7 @@
       border: 1px solid var(--border-color);
       scroll-behavior: smooth;
       transition: background-color 0.3s ease, border-color 0.3s ease;
-      min-height: 0; /* Important for Firefox */
+      min-height: 0;
     }
 
     .chat-messages::-webkit-scrollbar {
@@ -309,6 +340,17 @@
       font-size: 0.8rem;
       margin-bottom: 3px;
       opacity: 0.8;
+    }
+
+    .message .host-badge {
+      display: inline-block;
+      background-color: var(--host-badge);
+      color: white;
+      font-size: 0.6rem;
+      padding: 2px 5px;
+      border-radius: 10px;
+      margin-left: 5px;
+      vertical-align: middle;
     }
 
     /* 消息动画 */
@@ -400,6 +442,34 @@
     .password-input.active {
       display: block;
       animation: fadeIn 0.3s forwards;
+    }
+
+    /* 昵称设置区域 */
+    .nickname-container {
+      margin-bottom: 15px;
+    }
+
+    .nickname-input {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .nickname-input input {
+      flex: 1;
+    }
+
+    .nickname-input button {
+      width: auto;
+      padding: 10px 15px;
+    }
+
+    .footer {
+      color: var(--footer-text);
+      font-size: 0.8rem;
+      margin-top: 1.25rem; /* 20px 相当于 1.25rem */
+      text-align: center;
+      transition: color 0.3s ease;
     }
 
     @media (max-width: 600px) {
@@ -529,6 +599,16 @@
 
   <div class="menu active" id="menu">
     <h1><i class="fas fa-comments"></i> QuickChat</h1>
+    
+    <!-- 昵称设置区域 -->
+    <div class="nickname-container">
+      <label for="nicknameInput">你的昵称</label>
+      <div class="nickname-input">
+        <input type="text" id="nicknameInput" placeholder="输入你的昵称">
+        <button id="saveNicknameBtn" onclick="saveNickname()"><i class="fas fa-check"></i> 保存</button>
+      </div>
+    </div>
+    
     <div class="menu-buttons">
       <button onclick="showCreateRoomOptions()"><i class="fas fa-plus-circle"></i> 创建房间</button>
       <button onclick="showJoinRoomInput()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
@@ -550,6 +630,7 @@
         <button onclick="cancelCreateRoom()" style="background: #718096;"><i class="fas fa-times-circle"></i> 取消</button>
       </div>
     </div>
+
   </div>
 
   <div class="chat" id="chat">
@@ -574,6 +655,10 @@
       <button onclick="leaveRoom()" class="exit-button"><i class="fas fa-sign-out-alt"></i> 退出房间</button>
     </div>
   </div>
+        <!-- 页脚 -->
+        <div class="footer">
+          ©️Copyright Sam Zhang 2025 v1.4
+        </div>
 </div>
 
 <!-- 漂浮加入房间的输入框和按钮 -->
@@ -587,14 +672,48 @@
   <button onclick="joinRoom()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
 </div>
 
+
 <script>
 let peer;
 let connections = [];
 let roomId;
 let isHost = false;
 let roomPassword = null;
-let username = "用户" + Math.floor(Math.random() * 1000);
+let username = localStorage.getItem('nickname') || "用户" + Math.floor(Math.random() * 1000);
 let userCount = 1;
+
+// 初始化昵称
+function initNickname() {
+  const nicknameInput = document.getElementById('nicknameInput');
+  nicknameInput.value = username;
+}
+
+function saveNickname() {
+  const saveBtn = document.getElementById('saveNicknameBtn');
+  const newNickname = document.getElementById('nicknameInput').value.trim();
+  
+  if (newNickname) {
+    // 添加保存成功动画
+    saveBtn.classList.add('save-success');
+    saveBtn.innerHTML = '<i class="fas fa-check"></i> 已保存';
+    
+    // 恢复按钮状态
+    setTimeout(() => {
+      saveBtn.classList.remove('save-success');
+      saveBtn.innerHTML = '<i class="fas fa-check"></i> 保存';
+    }, 2000);
+    
+    username = newNickname;
+    localStorage.setItem('nickname', username);
+    addSystemMessage(`昵称已更新为: ${username}`);
+  } else {
+    // 如果昵称为空，添加抖动效果
+    saveBtn.classList.add('shake');
+    setTimeout(() => {
+      saveBtn.classList.remove('shake');
+    }, 500);
+  }
+}
 
 // 主题处理
 function setTheme(theme) {
@@ -628,6 +747,7 @@ function initTheme() {
 }
 
 initTheme();
+initNickname();
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   if (!localStorage.getItem('theme')) {
@@ -804,7 +924,6 @@ function initPeer() {
   });
 }
 
-// 修复房主消息重复的关键修改
 function handleNewConnection(conn) {
   conn.on('open', () => {
     conn.on('data', (data) => {
@@ -830,12 +949,13 @@ function handleNewConnection(conn) {
         setupConnection(conn);
         
         if (isHost) {
-          broadcastSystemMessage(`${data.username} 加入了房间`);
+          const joinMessage = `${data.username} 加入了房间`;
+          addSystemMessage(joinMessage);
+          broadcastSystemMessage(joinMessage);
           updateUserCount();
           broadcastUserCount();
         }
       }
-      // 移除了消息转发逻辑，防止房主消息重复
     });
   });
 }
@@ -843,7 +963,7 @@ function handleNewConnection(conn) {
 function setupConnection(conn) {
   conn.on('data', (data) => {
     if (data.type === 'message') {
-      addMessage(data.sender, data.content, 'received');
+      addMessage(data.sender, data.content, 'received', data.isHost);
       
       // 只有房主需要转发消息，且不转发给自己
       if (isHost && data.sender !== username) {
@@ -871,9 +991,15 @@ function setupConnection(conn) {
     if (index > -1) connections.splice(index, 1);
     
     if (conn.username) {
-      if (isHost) broadcastSystemMessage(`${conn.username} 离开了房间`);
+      const leaveMessage = `${conn.username} 离开了房间`;
+      addSystemMessage(leaveMessage);
+      if (isHost) {
+        broadcastSystemMessage(leaveMessage);
+      }
     } else if (isHost) {
-      broadcastSystemMessage('有用户离开了房间');
+      const leaveMessage = '有用户离开了房间';
+      addSystemMessage(leaveMessage);
+      broadcastSystemMessage(leaveMessage);
     }
     
     if (isHost) {
@@ -888,7 +1014,7 @@ function sendMessage() {
   const content = input.value.trim();
   
   if (content) {
-    addMessage(username, content, 'sent');
+    addMessage(username, content, 'sent', isHost);
     
     if (isHost) {
       // 房主直接广播给所有客户端
@@ -900,7 +1026,8 @@ function sendMessage() {
           conn.send({
             type: 'message',
             sender: username,
-            content: content
+            content: content,
+            isHost: false
           });
         }
       });
@@ -917,7 +1044,8 @@ function broadcastMessage(sender, content, exclude = null) {
       conn.send({
         type: 'message',
         sender: sender,
-        content: content
+        content: content,
+        isHost: isHost
       });
     }
   });
@@ -950,13 +1078,22 @@ function updateUserCount() {
   document.getElementById('userCount').textContent = count;
 }
 
-function addMessage(sender, text, type) {
+function addMessage(sender, text, type, isHostMessage = false) {
   const msgDiv = document.createElement('div');
   msgDiv.classList.add('message', type);
   
   const senderSpan = document.createElement('span');
   senderSpan.classList.add('sender');
   senderSpan.textContent = sender;
+  
+  // 如果是房主消息，添加房主标志
+  if (isHostMessage) {
+    const hostBadge = document.createElement('span');
+    hostBadge.classList.add('host-badge');
+    hostBadge.textContent = '房主';
+    senderSpan.appendChild(hostBadge);
+  }
+  
   msgDiv.appendChild(senderSpan);
   
   const contentSpan = document.createElement('span');
