@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>简约聊天室</title>
+  <title>多人聊天室</title>
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -66,14 +66,14 @@
 
     .container {
       width: 95%;
-      max-width: 800px; /* Increased from 600px */
+      max-width: 800px;
       background: var(--card-bg);
       border-radius: 12px;
       padding: 25px;
       box-shadow: 0 5px 15px var(--shadow-color);
       display: flex;
       flex-direction: column;
-      min-height: 85vh; /* Increased from 80vh */
+      height: 85vh; /* Fixed height instead of min-height */
       opacity: 0;
       transform: translateY(20px);
       animation: fadeIn 0.6s forwards cubic-bezier(0.22, 1, 0.36, 1);
@@ -144,11 +144,41 @@
       flex-direction: column;
       flex: 1;
       gap: 15px;
+      height: 100%; /* Ensure full height */
     }
 
     .menu.active, .chat.active {
       display: flex;
       animation: fadeScale 0.5s forwards cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Fixed layout for chat interface */
+    .chat.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      flex-shrink: 0; /* Don't shrink */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .user-count {
+      background-color: var(--accent-primary);
+      color: white;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .chat-footer {
+      flex-shrink: 0; /* Don't shrink */
+      margin-top: 10px;
     }
 
     @keyframes fadeScale {
@@ -171,7 +201,7 @@
 
     input, button {
       width: 100%;
-      padding: 10px 16px; /* Reduced height */
+      padding: 10px 16px;
       border: none;
       border-radius: 8px;
       font-size: 16px;
@@ -214,10 +244,10 @@
     }
 
     .chat-messages {
-      flex: 1;
+      flex: 1; /* Take up all available space */
       margin: 10px 0;
       padding: 15px;
-      overflow-y: auto;
+      overflow-y: auto; /* Only this area scrolls */
       background: var(--bg-secondary);
       border-radius: 10px;
       display: flex;
@@ -226,6 +256,7 @@
       border: 1px solid var(--border-color);
       scroll-behavior: smooth;
       transition: background-color 0.3s ease, border-color 0.3s ease;
+      min-height: 0; /* Important for Firefox */
     }
 
     .chat-messages::-webkit-scrollbar {
@@ -257,7 +288,7 @@
     .message-input-container button {
       width: 60px;
       margin: 0;
-      height: 40px; /* Fixed height */
+      height: 40px;
     }
 
     .message {
@@ -271,6 +302,13 @@
       transform: translateY(10px);
       position: relative;
       transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .message .sender {
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 3px;
+      opacity: 0.8;
     }
 
     /* 消息动画 */
@@ -337,10 +375,37 @@
       background: #c53030;
     }
 
+    /* 密码选项样式 */
+    .password-option {
+      margin-top: 15px;
+      margin-bottom: 10px;
+    }
+
+    .password-checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .password-checkbox-container input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
+
+    .password-input {
+      display: none;
+    }
+
+    .password-input.active {
+      display: block;
+      animation: fadeIn 0.3s forwards;
+    }
+
     @media (max-width: 600px) {
       .container {
         padding: 20px;
-        min-height: 90vh;
+        height: 90vh;
       }
       
       h1 {
@@ -463,24 +528,51 @@
   </div>
 
   <div class="menu active" id="menu">
-    <h1><i class="fas fa-comments"></i> 简约聊天室</h1>
+    <h1><i class="fas fa-comments"></i> 多人聊天室</h1>
     <div class="menu-buttons">
-      <button onclick="createRoom()"><i class="fas fa-plus-circle"></i> 创建房间</button>
+      <button onclick="showCreateRoomOptions()"><i class="fas fa-plus-circle"></i> 创建房间</button>
       <button onclick="showJoinRoomInput()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
+    </div>
+    
+    <!-- 创建房间的选项 (初始隐藏) -->
+    <div id="createRoomOptions" style="display: none;">
+      <div class="password-option">
+        <div class="password-checkbox-container">
+          <input type="checkbox" id="passwordCheckbox" onchange="togglePasswordInput()">
+          <label for="passwordCheckbox">设置房间密码</label>
+        </div>
+        <div id="passwordInput" class="password-input">
+          <input type="password" id="roomPassword" placeholder="输入房间密码">
+        </div>
+      </div>
+      <div class="menu-buttons">
+        <button onclick="createRoom()"><i class="fas fa-check-circle"></i> 确认创建</button>
+        <button onclick="cancelCreateRoom()" style="background: #718096;"><i class="fas fa-times-circle"></i> 取消</button>
+      </div>
     </div>
   </div>
 
   <div class="chat" id="chat">
-    <h2><i class="fas fa-users"></i> <span id="roomInfo">房间号: </span></h2>
-    <div class="chat-messages" id="chatMessages"></div>
-    
-    <!-- 消息输入区域 -->
-    <div class="message-input-container">
-      <input type="text" id="messageInput" placeholder="输入消息...">
-      <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+    <!-- Fixed header -->
+    <div class="chat-header">
+      <h2><i class="fas fa-users"></i> <span id="roomInfo">房间号: </span></h2>
+      <div class="user-count">
+        <i class="fas fa-user"></i> <span id="userCount">1</span>
+      </div>
     </div>
     
-    <button onclick="leaveRoom()" class="exit-button"><i class="fas fa-sign-out-alt"></i> 退出房间</button>
+    <!-- Scrollable message area -->
+    <div class="chat-messages" id="chatMessages"></div>
+    
+    <!-- Fixed footer with input and buttons -->
+    <div class="chat-footer">
+      <div class="message-input-container">
+        <input type="text" id="messageInput" placeholder="输入消息...">
+        <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+      </div>
+      
+      <button onclick="leaveRoom()" class="exit-button"><i class="fas fa-sign-out-alt"></i> 退出房间</button>
+    </div>
   </div>
 </div>
 
@@ -489,6 +581,9 @@
   <button class="close-btn" onclick="hideJoinRoomInput()"><i class="fas fa-times"></i></button>
   <h3><i class="fas fa-door-open"></i> 加入聊天房间</h3>
   <input type="text" id="joinRoomInput" placeholder="输入房间号 (4位数)">
+  <div id="joinPasswordInput" class="password-input">
+    <input type="password" id="joinRoomPassword" placeholder="输入房间密码">
+  </div>
   <button onclick="joinRoom()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
 </div>
 
@@ -497,6 +592,9 @@ let peer;
 let connections = [];
 let roomId;
 let isHost = false;
+let roomPassword = null;
+let username = "用户" + Math.floor(Math.random() * 1000); // 随机用户名
+let userCount = 1; // 当前用户数量
 
 // Theme handling
 function setTheme(theme) {
@@ -543,18 +641,61 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
   }
 });
 
+// 显示和隐藏创建房间选项
+function showCreateRoomOptions() {
+  document.getElementById('createRoomOptions').style.display = 'block';
+}
+
+function cancelCreateRoom() {
+  document.getElementById('createRoomOptions').style.display = 'none';
+  document.getElementById('passwordCheckbox').checked = false;
+  document.getElementById('passwordInput').classList.remove('active');
+  document.getElementById('roomPassword').value = '';
+}
+
+function togglePasswordInput() {
+  const isChecked = document.getElementById('passwordCheckbox').checked;
+  const passwordInput = document.getElementById('passwordInput');
+  
+  if (isChecked) {
+    passwordInput.classList.add('active');
+  } else {
+    passwordInput.classList.remove('active');
+  }
+}
+
+// 检查是否有保存的房间信息
 if (localStorage.getItem('roomId')) {
   roomId = localStorage.getItem('roomId');
   isHost = localStorage.getItem('isHost') === 'true';
+  roomPassword = localStorage.getItem('roomPassword');
   initPeer();
 }
 
 function createRoom() {
   roomId = Math.floor(1000 + Math.random() * 9000).toString();
   isHost = true;
+  
+  // 获取密码（如果设置了）
+  if (document.getElementById('passwordCheckbox').checked) {
+    roomPassword = document.getElementById('roomPassword').value;
+  } else {
+    roomPassword = null;
+  }
+  
+  // 保存房间信息
   localStorage.setItem('roomId', roomId);
   localStorage.setItem('isHost', 'true');
+  if (roomPassword) {
+    localStorage.setItem('roomPassword', roomPassword);
+  } else {
+    localStorage.removeItem('roomPassword');
+  }
+  
   initPeer();
+  
+  // 隐藏创建房间选项
+  cancelCreateRoom();
 }
 
 function showJoinRoomInput() {
@@ -563,6 +704,9 @@ function showJoinRoomInput() {
   // 触发重排以便动画生效
   void floatingDiv.offsetWidth;
   floatingDiv.classList.add('active');
+  
+  // 隐藏密码输入框，等待检查是否需要密码
+  document.getElementById('joinPasswordInput').classList.remove('active');
   
   // 聚焦输入框
   setTimeout(() => {
@@ -577,18 +721,80 @@ function hideJoinRoomInput() {
   // 等待动画完成后隐藏元素
   setTimeout(() => {
     floatingDiv.style.display = 'none';
+    // 重置输入框
+    document.getElementById('joinRoomInput').value = '';
+    document.getElementById('joinRoomPassword').value = '';
+    document.getElementById('joinPasswordInput').classList.remove('active');
   }, 400);
 }
 
+// 检查房间是否需要密码
+function checkRoomPassword(roomId, callback) {
+  const conn = peer.connect(`${roomId}-info`, { reliable: true });
+  
+  conn.on('open', function() {
+    conn.send({ type: 'password-check' });
+    
+    conn.on('data', function(data) {
+      if (data.type === 'password-check-result') {
+        callback(data.hasPassword);
+        conn.close();
+      }
+    });
+  });
+  
+  conn.on('error', function(err) {
+    console.error("Error checking password:", err);
+    callback(false); // 出错时假设不需要密码，用户可以尝试直接加入
+  });
+  
+  // 设置超时
+  setTimeout(() => {
+    if (conn.open) {
+      conn.close();
+      callback(false);
+    }
+  }, 5000);
+}
+
+// 尝试加入房间
 function joinRoom() {
   const input = document.getElementById('joinRoomInput').value.trim();
+  
   if (input.length === 4) {
-    roomId = input;
-    isHost = false;
-    localStorage.setItem('roomId', roomId);
-    localStorage.setItem('isHost', 'false');
-    initPeer();
-    hideJoinRoomInput();
+    const inputRoomId = input;
+    
+    // 检查是否需要密码
+    if (document.getElementById('joinPasswordInput').classList.contains('active')) {
+      // 已经显示了密码输入框，用户已输入密码
+      const password = document.getElementById('joinRoomPassword').value;
+      attemptJoinRoom(inputRoomId, password);
+    } else {
+      // 创建一个临时的Peer来检查是否需要密码
+      const tempPeer = new Peer();
+      
+      tempPeer.on('open', function(id) {
+        checkRoomPassword(inputRoomId, function(hasPassword) {
+          tempPeer.destroy();
+          
+          if (hasPassword) {
+            // 显示密码输入框
+            document.getElementById('joinPasswordInput').classList.add('active');
+            document.getElementById('joinRoomPassword').focus();
+          } else {
+            // 不需要密码，直接加入
+            attemptJoinRoom(inputRoomId, null);
+          }
+        });
+      });
+      
+      tempPeer.on('error', function(err) {
+        console.error("Temp peer error:", err);
+        tempPeer.destroy();
+        // 错误情况下，尝试直接加入
+        attemptJoinRoom(inputRoomId, null);
+      });
+    }
   } else {
     // 输入错误时的视觉反馈
     const inputEl = document.getElementById('joinRoomInput');
@@ -604,33 +810,98 @@ function joinRoom() {
   }
 }
 
+// 尝试加入房间
+function attemptJoinRoom(inputRoomId, password) {
+  roomId = inputRoomId;
+  isHost = false;
+  roomPassword = password;
+  
+  // 保存房间信息
+  localStorage.setItem('roomId', roomId);
+  localStorage.setItem('isHost', 'false');
+  if (roomPassword) {
+    localStorage.setItem('roomPassword', roomPassword);
+  } else {
+    localStorage.removeItem('roomPassword');
+  }
+  
+  initPeer();
+  hideJoinRoomInput();
+}
+
 function initPeer() {
   document.getElementById('menu').classList.remove('active');
   document.getElementById('chat').classList.add('active');
   document.getElementById('roomInfo').textContent = `房间号: ${roomId}`;
+  updateUserCount();
 
   if (isHost) {
+    // 主持人使用房间ID作为自己的ID
     peer = new Peer(roomId);
+    
+    // 创建一个信息通道，用于处理密码检查等
+    const infoPeer = new Peer(`${roomId}-info`);
+    
     peer.on('open', () => {
-      addSystemMessage('房间创建成功，等待加入...');
+      addSystemMessage('房间创建成功，等待其他用户加入...');
     });
+    
+    // 主机处理新连接
     peer.on('connection', (conn) => {
-      connections.push(conn);
-      setupConnection(conn);
-      addSystemMessage('新用户加入了房间');
+      handleNewConnection(conn);
+    });
+    
+    // 信息通道处理密码查询
+    infoPeer.on('connection', (conn) => {
+      conn.on('data', (data) => {
+        if (data.type === 'password-check') {
+          conn.send({
+            type: 'password-check-result',
+            hasPassword: roomPassword !== null
+          });
+        }
+      });
     });
   } else {
+    // 普通用户生成随机ID
     peer = new Peer('user-' + Math.random().toString(36).substr(2, 5));
+    
     peer.on('open', () => {
-      const conn = peer.connect(roomId);
-      connections.push(conn);
-      setupConnection(conn);
+      // 连接到房主
+      const conn = peer.connect(roomId, {
+        reliable: true,
+        metadata: { username: username }
+      });
+      
+      conn.on('open', () => {
+        // 发送认证信息
+        conn.send({
+          type: 'auth',
+          password: roomPassword,
+          username: username
+        });
+        
+        // 保存连接
+        connections.push(conn);
+        setupConnection(conn);
+      });
+      
+      conn.on('error', (err) => {
+        console.error('Connection error:', err);
+        addSystemMessage('连接错误: ' + err.type);
+      });
     });
   }
 
   peer.on('error', (err) => {
-    console.error(err);
-    addSystemMessage('连接错误: ' + err.type);
+    console.error('Peer error:', err);
+    if (err.type === 'peer-unavailable') {
+      addSystemMessage('找不到指定的房间，请检查房间号是否正确');
+    } else if (err.type === 'network' || err.type === 'disconnected') {
+      addSystemMessage('网络错误，请检查您的网络连接');
+    } else {
+      addSystemMessage('连接错误: ' + err.type);
+    }
   });
   
   // 添加Enter键发送消息的事件监听
@@ -642,45 +913,197 @@ function initPeer() {
   
   // 添加Enter键加入房间的事件监听
   document.getElementById('joinRoomInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !document.getElementById('joinPasswordInput').classList.contains('active')) {
+      joinRoom();
+    }
+  });
+  
+  document.getElementById('joinRoomPassword').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
       joinRoom();
     }
   });
 }
 
-function setupConnection(conn) {
-  conn.on('data', (data) => {
-    addMessage(data, 'received');
-  });
+// 处理新连接
+function handleNewConnection(conn) {
   conn.on('open', () => {
-    addSystemMessage('连接成功，可以开始聊天了');
-  });
-  conn.on('close', () => {
-    addSystemMessage('有用户离开了房间');
+    // 等待认证
+    conn.on('data', (data) => {
+      if (data.type === 'auth') {
+        // 检查密码
+        if (roomPassword && data.password !== roomPassword) {
+          conn.send({
+            type: 'auth-result',
+            success: false,
+            message: '密码错误'
+          });
+          setTimeout(() => conn.close(), 1000);
+          return;
+        }
+        
+        // 认证成功
+        conn.send({
+          type: 'auth-result',
+          success: true,
+          connectedUsers: connections.length + 1 // 包括主持人自己
+        });
+        
+        // 保存连接和用户名
+        conn.username = data.username;
+        connections.push(conn);
+        setupConnection(conn);
+        
+        // 通知所有人有新用户加入
+        broadcastSystemMessage(`${conn.username} 加入了房间`);
+        updateUserCount();
+        broadcastUserCount();
+      }
+    });
   });
 }
 
+function setupConnection(conn) {
+  conn.on('data', (data) => {
+    // 根据数据类型处理
+    if (data.type === 'message') {
+      // 收到消息，显示并转发给其他人
+      addMessage(data.sender, data.content, 'received');
+      
+      // 如果是主持人，转发给所有其他连接
+      if (isHost) {
+        broadcastMessage(data.sender, data.content, conn);
+      }
+    } else if (data.type === 'system') {
+      // 系统消息
+      addSystemMessage(data.content);
+    } else if (data.type === 'auth-result') {
+      // 认证结果
+      if (data.success) {
+        addSystemMessage('连接成功，可以开始聊天了');
+        userCount = data.connectedUsers;
+        updateUserCount();
+      } else {
+        addSystemMessage(`连接失败: ${data.message}`);
+        setTimeout(leaveRoom, 2000);
+      }
+    } else if (data.type === 'user-count') {
+      // 更新用户数量
+      userCount = data.count;
+      updateUserCount();
+    }
+  });
+  
+  conn.on('close', () => {
+    // 从连接列表中移除
+    const index = connections.indexOf(conn);
+    if (index > -1) {
+      connections.splice(index, 1);
+    }
+    
+    // 通知有用户离开
+    if (conn.username) {
+      broadcastSystemMessage(`${conn.username} 离开了房间`);
+    } else {
+      broadcastSystemMessage('有用户离开了房间');
+    }
+    
+    // 更新用户数量
+    updateUserCount();
+    broadcastUserCount();
+  });
+}
+
+// 发送消息给所有人
 function sendMessage() {
   const input = document.getElementById('messageInput');
-  const message = input.value.trim();
-  if (message) {
-    connections.forEach(conn => {
-      if (conn.open) {
-        conn.send(message);
-      }
-    });
-    addMessage(message, 'sent');
-    input.value = '';
+  const content = input.value.trim();
+  
+  if (content) {
+    // 显示自己的消息
+    addMessage(username, content, 'sent');
     
-    // 发送后聚焦输入框
+    // 发送给所有连接
+    if (isHost) {
+      broadcastMessage(username, content);
+    } else {
+      // 非主持人，发送给主持人
+      connections.forEach(conn => {
+        if (conn.open) {
+          conn.send({
+            type: 'message',
+            sender: username,
+            content: content
+          });
+        }
+      });
+    }
+    
+    // 清空输入框并聚焦
+    input.value = '';
     input.focus();
   }
 }
 
-function addMessage(text, type) {
+// 主持人向所有人广播消息
+function broadcastMessage(sender, content, exclude = null) {
+  connections.forEach(conn => {
+    if (conn.open && conn !== exclude) {
+      conn.send({
+        type: 'message',
+        sender: sender,
+        content: content
+      });
+    }
+  });
+}
+
+// 广播系统消息
+function broadcastSystemMessage(content) {
+  connections.forEach(conn => {
+    if (conn.open) {
+      conn.send({
+        type: 'system',
+        content: content
+      });
+    }
+  });
+}
+
+// 广播用户数量
+function broadcastUserCount() {
+  connections.forEach(conn => {
+    if (conn.open) {
+      conn.send({
+        type: 'user-count',
+        count: connections.length + 1 // 包括主持人
+      });
+    }
+  });
+}
+
+// 更新用户计数显示
+function updateUserCount() {
+  const count = isHost ? connections.length + 1 : userCount;
+  document.getElementById('userCount').textContent = count;
+}
+
+// 添加消息到聊天区域
+function addMessage(sender, text, type) {
   const msgDiv = document.createElement('div');
   msgDiv.classList.add('message', type);
-  msgDiv.textContent = text;
+  
+  // 添加发送者名称
+  const senderSpan = document.createElement('span');
+  senderSpan.classList.add('sender');
+  senderSpan.textContent = sender;
+  msgDiv.appendChild(senderSpan);
+  
+  // 添加消息内容
+  const contentSpan = document.createElement('span');
+  contentSpan.textContent = text;
+  msgDiv.appendChild(contentSpan);
+  
   document.getElementById('chatMessages').appendChild(msgDiv);
   
   // 添加消息动画
@@ -707,10 +1130,16 @@ function scrollToBottom() {
 function leaveRoom() {
   if (peer) {
     peer.destroy();
-    connections.forEach(conn => conn.close());
+    connections.forEach(conn => {
+      if (conn.open) conn.close();
+    });
+    connections = [];
   }
+  
   localStorage.removeItem('roomId');
   localStorage.removeItem('isHost');
+  localStorage.removeItem('roomPassword');
+  
   location.reload();
 }
 </script>
