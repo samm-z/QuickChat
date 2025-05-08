@@ -705,8 +705,8 @@ function showJoinRoomInput() {
   void floatingDiv.offsetWidth;
   floatingDiv.classList.add('active');
   
-  // 隐藏密码输入框，等待检查是否需要密码
-  document.getElementById('joinPasswordInput').classList.remove('active');
+  // 默认显示密码输入框，简化流程
+  document.getElementById('joinPasswordInput').classList.add('active');
   
   // 聚焦输入框
   setTimeout(() => {
@@ -724,77 +724,29 @@ function hideJoinRoomInput() {
     // 重置输入框
     document.getElementById('joinRoomInput').value = '';
     document.getElementById('joinRoomPassword').value = '';
-    document.getElementById('joinPasswordInput').classList.remove('active');
   }, 400);
 }
 
-// 检查房间是否需要密码
-function checkRoomPassword(roomId, callback) {
-  const conn = peer.connect(`${roomId}-info`, { reliable: true });
-  
-  conn.on('open', function() {
-    conn.send({ type: 'password-check' });
-    
-    conn.on('data', function(data) {
-      if (data.type === 'password-check-result') {
-        callback(data.hasPassword);
-        conn.close();
-      }
-    });
-  });
-  
-  conn.on('error', function(err) {
-    console.error("Error checking password:", err);
-    callback(false); // 出错时假设不需要密码，用户可以尝试直接加入
-  });
-  
-  // 设置超时
-  setTimeout(() => {
-    if (conn.open) {
-      conn.close();
-      callback(false);
-    }
-  }, 5000);
-}
-
-// 尝试加入房间
+// 直接加入房间，简化流程
 function joinRoom() {
   const input = document.getElementById('joinRoomInput').value.trim();
   
   if (input.length === 4) {
-    const inputRoomId = input;
+    roomId = input;
+    isHost = false;
+    roomPassword = document.getElementById('joinRoomPassword').value.trim();
     
-    // 检查是否需要密码
-    if (document.getElementById('joinPasswordInput').classList.contains('active')) {
-      // 已经显示了密码输入框，用户已输入密码
-      const password = document.getElementById('joinRoomPassword').value;
-      attemptJoinRoom(inputRoomId, password);
+    // 保存房间信息
+    localStorage.setItem('roomId', roomId);
+    localStorage.setItem('isHost', 'false');
+    if (roomPassword) {
+      localStorage.setItem('roomPassword', roomPassword);
     } else {
-      // 创建一个临时的Peer来检查是否需要密码
-      const tempPeer = new Peer();
-      
-      tempPeer.on('open', function(id) {
-        checkRoomPassword(inputRoomId, function(hasPassword) {
-          tempPeer.destroy();
-          
-          if (hasPassword) {
-            // 显示密码输入框
-            document.getElementById('joinPasswordInput').classList.add('active');
-            document.getElementById('joinRoomPassword').focus();
-          } else {
-            // 不需要密码，直接加入
-            attemptJoinRoom(inputRoomId, null);
-          }
-        });
-      });
-      
-      tempPeer.on('error', function(err) {
-        console.error("Temp peer error:", err);
-        tempPeer.destroy();
-        // 错误情况下，尝试直接加入
-        attemptJoinRoom(inputRoomId, null);
-      });
+      localStorage.removeItem('roomPassword');
     }
+    
+    initPeer();
+    hideJoinRoomInput();
   } else {
     // 输入错误时的视觉反馈
     const inputEl = document.getElementById('joinRoomInput');
@@ -810,25 +762,6 @@ function joinRoom() {
   }
 }
 
-// 尝试加入房间
-function attemptJoinRoom(inputRoomId, password) {
-  roomId = inputRoomId;
-  isHost = false;
-  roomPassword = password;
-  
-  // 保存房间信息
-  localStorage.setItem('roomId', roomId);
-  localStorage.setItem('isHost', 'false');
-  if (roomPassword) {
-    localStorage.setItem('roomPassword', roomPassword);
-  } else {
-    localStorage.removeItem('roomPassword');
-  }
-  
-  initPeer();
-  hideJoinRoomInput();
-}
-
 function initPeer() {
   document.getElementById('menu').classList.remove('active');
   document.getElementById('chat').classList.add('active');
@@ -839,9 +772,6 @@ function initPeer() {
     // 主持人使用房间ID作为自己的ID
     peer = new Peer(roomId);
     
-    // 创建一个信息通道，用于处理密码检查等
-    const infoPeer = new Peer(`${roomId}-info`);
-    
     peer.on('open', () => {
       addSystemMessage('房间创建成功，等待其他用户加入...');
     });
@@ -850,23 +780,11 @@ function initPeer() {
     peer.on('connection', (conn) => {
       handleNewConnection(conn);
     });
-    
-    // 信息通道处理密码查询
-    infoPeer.on('connection', (conn) => {
-      conn.on('data', (data) => {
-        if (data.type === 'password-check') {
-          conn.send({
-            type: 'password-check-result',
-            hasPassword: roomPassword !== null
-          });
-        }
-      });
-    });
   } else {
     // 普通用户生成随机ID
-    peer = new Peer('user-' + Math.random().toString(36).substr(2, 5));
+    peer = new Peer();
     
-    peer.on('open', () => {
+    peer.on('open', (id) => {
       // 连接到房主
       const conn = peer.connect(roomId, {
         reliable: true,
@@ -913,7 +831,7 @@ function initPeer() {
   
   // 添加Enter键加入房间的事件监听
   document.getElementById('joinRoomInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && !document.getElementById('joinPasswordInput').classList.contains('active')) {
+    if (e.key === 'Enter') {
       joinRoom();
     }
   });
@@ -958,6 +876,10 @@ function handleNewConnection(conn) {
         broadcastSystemMessage(`${conn.username} 加入了房间`);
         updateUserCount();
         broadcastUserCount();
+      } else if (data.type === 'message') {
+        // 收到消息，显示并转发给其他人
+        addMessage(data.sender, data.content, 'received');
+        broadcastMessage(data.sender, data.content, conn);
       }
     });
   });
@@ -967,13 +889,8 @@ function setupConnection(conn) {
   conn.on('data', (data) => {
     // 根据数据类型处理
     if (data.type === 'message') {
-      // 收到消息，显示并转发给其他人
+      // 收到消息，显示
       addMessage(data.sender, data.content, 'received');
-      
-      // 如果是主持人，转发给所有其他连接
-      if (isHost) {
-        broadcastMessage(data.sender, data.content, conn);
-      }
     } else if (data.type === 'system') {
       // 系统消息
       addSystemMessage(data.content);
