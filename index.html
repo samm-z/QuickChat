@@ -29,6 +29,9 @@
       --host-badge: #e53e3e;
       --footer-text: #718096;
       --success-color: #38a169;
+      --modal-overlay: rgba(0, 0, 0, 0.5);
+      --danger-color: #e53e3e;
+      --warning-color: #dd6b20;
     }
 
     [data-theme="dark"] {
@@ -52,6 +55,9 @@
       --host-badge: #c53030;
       --footer-text: #a0aec0;
       --success-color: #48bb78;
+      --modal-overlay: rgba(0, 0, 0, 0.7);
+      --danger-color: #c53030;
+      --warning-color: #c05621;
     }
 
     * {
@@ -103,6 +109,14 @@
       color: var(--accent-primary);
       cursor: pointer;
       transition: color 0.3s ease, transform 0.3s ease;
+      padding: 8px;
+      border-radius: 50%;
+      background-color: var(--bg-secondary);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .theme-switch-icon:hover {
@@ -173,14 +187,26 @@
     }
 
     .user-count {
-      background-color: var(--accent-primary);
-      color: white;
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 0.85rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+  background-color: var(--accent-primary);
+  color: white;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  
+  /* 调整位置 */
+  position: relative;
+  left: 0px;  /* 向左移动 */
+  top: 30px;    /* 向上移动 */
+}
+
+    .user-count:hover {
+      background-color: var(--accent-secondary);
+      transform: translateY(-2px);
     }
 
     .chat-footer {
@@ -587,6 +613,217 @@
         transform: translateY(0);
       }
     }
+
+    /* 用户列表模态框样式 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--modal-overlay);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .modal-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 25px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 25px var(--shadow-color);
+      z-index: 1001;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .modal-overlay.active .modal-container {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 5px;
+      width: auto;
+      height: auto;
+      transition: color 0.2s ease;
+    }
+
+    .modal-close:hover {
+      color: var(--accent-primary);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .user-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .user-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background-color: var(--bg-secondary);
+      transition: background-color 0.2s ease;
+    }
+
+    .user-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .user-item:hover {
+      background-color: var(--border-color);
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--accent-primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+    }
+
+    .user-status {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+
+    .shake {
+      animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% {
+        transform: translate3d(-1px, 0, 0);
+      }
+      20%, 80% {
+        transform: translate3d(2px, 0, 0);
+      }
+      30%, 50%, 70% {
+        transform: translate3d(-3px, 0, 0);
+      }
+      40%, 60% {
+        transform: translate3d(3px, 0, 0);
+      }
+    }
+
+    /* 房主控制按钮 */
+    .host-controls {
+      margin-top: 15px;
+      display: none;
+    }
+
+    .host-controls.active {
+      display: block;
+    }
+
+    .host-controls-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    .host-controls-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .host-controls-buttons button {
+      flex: 1;
+      padding: 8px;
+    }
+
+    .danger-button {
+      background-color: var(--danger-color);
+    }
+
+    .danger-button:hover {
+      background-color: var(--danger-color);
+      opacity: 0.9;
+    }
+
+    .warning-button {
+      background-color: var(--warning-color);
+    }
+
+    .warning-button:hover {
+      background-color: var(--warning-color);
+      opacity: 0.9;
+    }
+
+    .room-paused {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .room-paused::after {
+      content: '房间已暂停';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: var(--warning-color);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      z-index: 10;
+    }
   </style>
 </head>
 <body>
@@ -594,7 +831,9 @@
 <div class="container">
   <!-- Theme toggle switch -->
   <div class="theme-switch">
-    <i class="fas fa-sun theme-switch-icon" id="themeToggle" onclick="toggleTheme()"></i>
+    <div class="theme-switch-icon" id="themeToggle" onclick="cycleTheme()">
+      <i class="fas fa-sun" id="themeIcon"></i>
+    </div>
   </div>
 
   <div class="menu active" id="menu">
@@ -613,31 +852,14 @@
       <button onclick="showCreateRoomOptions()"><i class="fas fa-plus-circle"></i> 创建房间</button>
       <button onclick="showJoinRoomInput()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
     </div>
-    
-    <!-- 创建房间的选项 (初始隐藏) -->
-    <div id="createRoomOptions" style="display: none;">
-      <div class="password-option">
-        <div class="password-checkbox-container">
-          <input type="checkbox" id="passwordCheckbox" onchange="togglePasswordInput()">
-          <label for="passwordCheckbox">设置房间密码</label>
-        </div>
-        <div id="passwordInput" class="password-input">
-          <input type="password" id="roomPassword" placeholder="输入房间密码">
-        </div>
-      </div>
-      <div class="menu-buttons">
-        <button onclick="createRoom()"><i class="fas fa-check-circle"></i> 确认创建</button>
-        <button onclick="cancelCreateRoom()" style="background: #718096;"><i class="fas fa-times-circle"></i> 取消</button>
-      </div>
-    </div>
-
   </div>
 
   <div class="chat" id="chat">
     <!-- Fixed header -->
     <div class="chat-header">
       <h2><i class="fas fa-users"></i> <span id="roomInfo">房间号: </span></h2>
-      <div class="user-count">
+      <!-- User count button (moved inside chat-header) -->
+      <div class="user-count" onclick="showUserList()">
         <i class="fas fa-user"></i> <span id="userCount">1</span>
       </div>
     </div>
@@ -655,14 +877,14 @@
       <button onclick="leaveRoom()" class="exit-button"><i class="fas fa-sign-out-alt"></i> 退出房间</button>
     </div>
   </div>
-        <!-- 页脚 -->
-        <div class="footer">
-          ©️Copyright Sam Zhang 2025 v1.4
-        </div>
+  <!-- 页脚 -->
+  <div class="footer">
+    ©️Copyright Sam Zhang 2025 v1.5
+  </div>
 </div>
 
 <!-- 漂浮加入房间的输入框和按钮 -->
-<div class="floating-div" id="floatingDiv">
+<div class="floating-div" id="joinRoomDiv">
   <button class="close-btn" onclick="hideJoinRoomInput()"><i class="fas fa-times"></i></button>
   <h3><i class="fas fa-door-open"></i> 加入聊天房间</h3>
   <input type="text" id="joinRoomInput" placeholder="输入房间号 (4位数)">
@@ -672,6 +894,45 @@
   <button onclick="joinRoom()"><i class="fas fa-sign-in-alt"></i> 加入房间</button>
 </div>
 
+<!-- 漂浮创建房间的输入框和按钮 -->
+<div class="floating-div" id="createRoomDiv">
+  <button class="close-btn" onclick="hideCreateRoomOptions()"><i class="fas fa-times"></i></button>
+  <h3><i class="fas fa-plus-circle"></i> 创建聊天房间</h3>
+  <div class="password-checkbox-container">
+    <input type="checkbox" id="passwordCheckbox" onchange="togglePasswordInput()">
+    <label for="passwordCheckbox">设置房间密码</label>
+  </div>
+  <div id="passwordInput" class="password-input">
+    <input type="password" id="roomPassword" placeholder="输入房间密码">
+  </div>
+  <button onclick="createRoom()"><i class="fas fa-check-circle"></i> 确认创建</button>
+</div>
+
+<!-- 用户列表模态框 -->
+<div class="modal-overlay" id="userListModal">
+  <div class="modal-container">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-users"></i> 房间成员</div>
+      <button class="modal-close" onclick="hideUserList()"><i class="fas fa-times"></i></button>
+    </div>
+    <ul class="user-list" id="userListContainer">
+      <!-- 用户列表将通过JavaScript动态生成 -->
+    </ul>
+    
+    <!-- 房主控制区域 -->
+    <div class="host-controls" id="hostControls">
+      <div class="host-controls-title">房主控制</div>
+      <div class="host-controls-buttons">
+        <button class="warning-button" id="pauseRoomBtn" onclick="togglePauseRoom()">
+          <i class="fas fa-pause"></i> 暂停房间
+        </button>
+        <button class="danger-button" onclick="deleteRoom()">
+          <i class="fas fa-trash-alt"></i> 删除房间
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 let peer;
@@ -681,6 +942,9 @@ let isHost = false;
 let roomPassword = null;
 let username = localStorage.getItem('nickname') || "用户" + Math.floor(Math.random() * 1000);
 let userCount = 1;
+let roomUsers = []; // 存储房间内的用户信息
+let currentTheme = localStorage.getItem('theme') || 'system';
+let isRoomPaused = false; // 房间是否暂停状态
 
 // 初始化昵称
 function initNickname() {
@@ -706,6 +970,11 @@ function saveNickname() {
     username = newNickname;
     localStorage.setItem('nickname', username);
     addSystemMessage(`昵称已更新为: ${username}`);
+    
+    // 如果已经在房间中，广播昵称更新
+    if (connections.length > 0) {
+      broadcastUserInfo();
+    }
   } else {
     // 如果昵称为空，添加抖动效果
     saveBtn.classList.add('shake');
@@ -717,54 +986,69 @@ function saveNickname() {
 
 // 主题处理
 function setTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
+  currentTheme = theme;
   
-  const themeToggle = document.getElementById('themeToggle');
-  if (theme === 'dark') {
-    themeToggle.classList.remove('fa-sun');
-    themeToggle.classList.add('fa-moon');
+  // 更新主题图标
+  const themeIcon = document.getElementById('themeIcon');
+  
+  if (theme === 'system') {
+    // 如果选择了系统主题，检测系统偏好
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    themeIcon.className = 'fas fa-desktop';
+  } else if (theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    themeIcon.className = 'fas fa-moon';
   } else {
-    themeToggle.classList.remove('fa-moon');
-    themeToggle.classList.add('fa-sun');
+    document.documentElement.setAttribute('data-theme', 'light');
+    themeIcon.className = 'fas fa-sun';
   }
+  
+  localStorage.setItem('theme', theme);
 }
 
-function toggleTheme() {
-  const currentTheme = localStorage.getItem('theme') || 'light';
-  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-  setTheme(newTheme);
+function cycleTheme() {
+  // 循环切换主题：light -> dark -> system -> light
+  if (currentTheme === 'light') {
+    setTheme('dark');
+  } else if (currentTheme === 'dark') {
+    setTheme('system');
+  } else {
+    setTheme('light');
+  }
 }
 
 function initTheme() {
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme) {
-    setTheme(savedTheme);
-  } else {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(prefersDark ? 'dark' : 'light');
-  }
+  setTheme(currentTheme);
+  
+  // 监听系统主题变化
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (currentTheme === 'system') {
+      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+    }
+  });
 }
 
 initTheme();
 initNickname();
 
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-  if (!localStorage.getItem('theme')) {
-    setTheme(e.matches ? 'dark' : 'light');
-  }
-});
-
 // 房间管理
 function showCreateRoomOptions() {
-  document.getElementById('createRoomOptions').style.display = 'block';
+  const createRoomDiv = document.getElementById('createRoomDiv');
+  createRoomDiv.style.display = 'block';
+  void createRoomDiv.offsetWidth;
+  createRoomDiv.classList.add('active');
 }
 
-function cancelCreateRoom() {
-  document.getElementById('createRoomOptions').style.display = 'none';
-  document.getElementById('passwordCheckbox').checked = false;
-  document.getElementById('passwordInput').classList.remove('active');
-  document.getElementById('roomPassword').value = '';
+function hideCreateRoomOptions() {
+  const createRoomDiv = document.getElementById('createRoomDiv');
+  createRoomDiv.classList.remove('active');
+  setTimeout(() => {
+    createRoomDiv.style.display = 'none';
+    document.getElementById('passwordCheckbox').checked = false;
+    document.getElementById('passwordInput').classList.remove('active');
+    document.getElementById('roomPassword').value = '';
+  }, 400);
 }
 
 function togglePasswordInput() {
@@ -803,14 +1087,14 @@ function createRoom() {
   }
   
   initPeer();
-  cancelCreateRoom();
+  hideCreateRoomOptions();
 }
 
 function showJoinRoomInput() {
-  const floatingDiv = document.getElementById('floatingDiv');
-  floatingDiv.style.display = 'block';
-  void floatingDiv.offsetWidth;
-  floatingDiv.classList.add('active');
+  const joinRoomDiv = document.getElementById('joinRoomDiv');
+  joinRoomDiv.style.display = 'block';
+  void joinRoomDiv.offsetWidth;
+  joinRoomDiv.classList.add('active');
   document.getElementById('joinPasswordInput').classList.add('active');
   setTimeout(() => {
     document.getElementById('joinRoomInput').focus();
@@ -818,10 +1102,10 @@ function showJoinRoomInput() {
 }
 
 function hideJoinRoomInput() {
-  const floatingDiv = document.getElementById('floatingDiv');
-  floatingDiv.classList.remove('active');
+  const joinRoomDiv = document.getElementById('joinRoomDiv');
+  joinRoomDiv.classList.remove('active');
   setTimeout(() => {
-    floatingDiv.style.display = 'none';
+    joinRoomDiv.style.display = 'none';
     document.getElementById('joinRoomInput').value = '';
     document.getElementById('joinRoomPassword').value = '';
   }, 400);
@@ -863,11 +1147,21 @@ function initPeer() {
   document.getElementById('chat').classList.add('active');
   document.getElementById('roomInfo').textContent = `房间号: ${roomId}`;
   updateUserCount();
+  
+  // 初始化房间用户列表
+  roomUsers = [{
+    id: isHost ? roomId : null, // 房主ID是房间ID，客户端初始化时ID未知
+    username: username,
+    isHost: isHost,
+    joinTime: new Date().toISOString()
+  }];
 
   if (isHost) {
     peer = new Peer(roomId);
     
-    peer.on('open', () => {
+    peer.on('open', (id) => {
+      // 更新自己的ID
+      roomUsers[0].id = id;
       addSystemMessage('房间创建成功，等待其他用户加入...');
     });
     
@@ -878,6 +1172,9 @@ function initPeer() {
     peer = new Peer();
     
     peer.on('open', (id) => {
+      // 更新自己的ID
+      roomUsers[0].id = id;
+      
       const conn = peer.connect(roomId, {
         reliable: true,
         metadata: { username: username }
@@ -887,7 +1184,8 @@ function initPeer() {
         conn.send({
           type: 'auth',
           password: roomPassword,
-          username: username
+          username: username,
+          userId: id
         });
         connections.push(conn);
         setupConnection(conn);
@@ -938,13 +1236,33 @@ function handleNewConnection(conn) {
           return;
         }
         
+        // 添加新用户到房间用户列表
+        const newUser = {
+          id: data.userId,
+          username: data.username,
+          isHost: false,
+          joinTime: new Date().toISOString(),
+          conn: conn
+        };
+        
+        roomUsers.push(newUser);
+        
+        // 发送认证成功和当前房间用户列表
         conn.send({
           type: 'auth-result',
           success: true,
-          connectedUsers: connections.length + 1
+          connectedUsers: connections.length + 1,
+          userList: roomUsers.map(user => ({
+            id: user.id,
+            username: user.username,
+            isHost: user.isHost,
+            joinTime: user.joinTime
+          })),
+          isRoomPaused: isRoomPaused
         });
         
         conn.username = data.username;
+        conn.userId = data.userId;
         connections.push(conn);
         setupConnection(conn);
         
@@ -954,6 +1272,7 @@ function handleNewConnection(conn) {
           broadcastSystemMessage(joinMessage);
           updateUserCount();
           broadcastUserCount();
+          broadcastUserList();
         }
       }
     });
@@ -963,6 +1282,11 @@ function handleNewConnection(conn) {
 function setupConnection(conn) {
   conn.on('data', (data) => {
     if (data.type === 'message') {
+      // 如果房间被暂停且不是房主发送的消息，则不处理
+      if (isRoomPaused && !data.isHost && isHost) {
+        return;
+      }
+      
       addMessage(data.sender, data.content, 'received', data.isHost);
       
       // 只有房主需要转发消息，且不转发给自己
@@ -976,6 +1300,25 @@ function setupConnection(conn) {
         addSystemMessage('连接成功，可以开始聊天了');
         userCount = data.connectedUsers;
         updateUserCount();
+        
+        // 更新房间用户列表
+        if (data.userList) {
+          roomUsers = data.userList;
+          // 添加自己到用户列表
+          if (!roomUsers.find(user => user.id === peer.id)) {
+            roomUsers.push({
+              id: peer.id,
+              username: username,
+              isHost: false,
+              joinTime: new Date().toISOString()
+            });
+          }
+        }
+        
+        // 设置房间暂停状态
+        if (data.isRoomPaused) {
+          setRoomPaused(true);
+        }
       } else {
         addSystemMessage(`连接失败: ${data.message}`);
         setTimeout(leaveRoom, 2000);
@@ -983,6 +1326,22 @@ function setupConnection(conn) {
     } else if (data.type === 'user-count') {
       userCount = data.count;
       updateUserCount();
+    } else if (data.type === 'user-list') {
+      roomUsers = data.userList;
+    } else if (data.type === 'user-info-update') {
+      // 更新用户信息
+      const userIndex = roomUsers.findIndex(user => user.id === data.userId);
+      if (userIndex !== -1) {
+        roomUsers[userIndex].username = data.username;
+      }
+    } else if (data.type === 'room-control') {
+      if (data.action === 'pause') {
+        setRoomPaused(data.paused);
+        addSystemMessage(data.paused ? '房主已暂停房间' : '房主已恢复房间');
+      } else if (data.action === 'delete') {
+        addSystemMessage('房主已删除房间');
+        setTimeout(leaveRoom, 2000);
+      }
     }
   });
   
@@ -990,26 +1349,40 @@ function setupConnection(conn) {
     const index = connections.indexOf(conn);
     if (index > -1) connections.splice(index, 1);
     
-    if (conn.username) {
-      const leaveMessage = `${conn.username} 离开了房间`;
-      addSystemMessage(leaveMessage);
-      if (isHost) {
+    // 从房间用户列表中移除用户
+    const userIndex = roomUsers.findIndex(user => user.id === conn.userId);
+    if (userIndex > -1) {
+      const leftUser = roomUsers[userIndex];
+      roomUsers.splice(userIndex, 1);
+      
+      if (leftUser.username) {
+        const leaveMessage = `${leftUser.username} 离开了房间`;
+        addSystemMessage(leaveMessage);
+        if (isHost) {
+          broadcastSystemMessage(leaveMessage);
+        }
+      } else if (isHost) {
+        const leaveMessage = '有用户离开了房间';
+        addSystemMessage(leaveMessage);
         broadcastSystemMessage(leaveMessage);
       }
-    } else if (isHost) {
-      const leaveMessage = '有用户离开了房间';
-      addSystemMessage(leaveMessage);
-      broadcastSystemMessage(leaveMessage);
     }
     
     if (isHost) {
       updateUserCount();
       broadcastUserCount();
+      broadcastUserList();
     }
   });
 }
 
 function sendMessage() {
+  // 如果房间被暂停且不是房主，则不能发送消息
+  if (isRoomPaused && !isHost) {
+    addSystemMessage('房间已被暂停，暂时无法发送消息');
+    return;
+  }
+  
   const input = document.getElementById('messageInput');
   const content = input.value.trim();
   
@@ -1068,6 +1441,38 @@ function broadcastUserCount() {
       conn.send({
         type: 'user-count',
         count: connections.length + 1
+      });
+    }
+  });
+}
+
+function broadcastUserList() {
+  // 只发送必要的用户信息，不包括连接对象
+  const userListToSend = roomUsers.map(user => ({
+    id: user.id,
+    username: user.username,
+    isHost: user.isHost,
+    joinTime: user.joinTime
+  }));
+  
+  connections.forEach(conn => {
+    if (conn.open) {
+      conn.send({
+        type: 'user-list',
+        userList: userListToSend
+      });
+    }
+  });
+}
+
+function broadcastUserInfo() {
+  // 广播自己的用户信息更新
+  connections.forEach(conn => {
+    if (conn.open) {
+      conn.send({
+        type: 'user-info-update',
+        userId: peer.id,
+        username: username
       });
     }
   });
@@ -1136,6 +1541,147 @@ function leaveRoom() {
   localStorage.removeItem('roomPassword');
   
   location.reload();
+}
+
+// 用户列表相关功能
+function showUserList() {
+  const modal = document.getElementById('userListModal');
+  const userListContainer = document.getElementById('userListContainer');
+  const hostControls = document.getElementById('hostControls');
+  
+  // 清空现有列表
+  userListContainer.innerHTML = '';
+  
+  // 按照加入时间排序，房主始终在最前面
+  const sortedUsers = [...roomUsers].sort((a, b) => {
+    if (a.isHost) return -1;
+    if (b.isHost) return 1;
+    return new Date(a.joinTime) - new Date(b.joinTime);
+  });
+  
+  // 生成用户列表
+  sortedUsers.forEach(user => {
+    const userItem = document.createElement('li');
+    userItem.className = 'user-item';
+    
+    // 获取用户名首字母或第一个字符作为头像
+    const avatarChar = user.username.charAt(0).toUpperCase();
+    
+    userItem.innerHTML = `
+      <div class="user-avatar">${avatarChar}</div>
+      <div class="user-info">
+        <div class="user-name">
+          ${user.username}
+          ${user.isHost ? '<span class="host-badge">房主</span>' : ''}
+        </div>
+        <div class="user-status">${user.id === peer.id ? '(我)' : ''}</div>
+      </div>
+    `;
+    
+    userListContainer.appendChild(userItem);
+  });
+  
+  // 如果是房主，显示房主控制区域
+  if (isHost) {
+    hostControls.classList.add('active');
+    
+    // 更新暂停按钮文本
+    const pauseBtn = document.getElementById('pauseRoomBtn');
+    if (isRoomPaused) {
+      pauseBtn.innerHTML = '<i class="fas fa-play"></i> 恢复房间';
+    } else {
+      pauseBtn.innerHTML = '<i class="fas fa-pause"></i> 暂停房间';
+    }
+  } else {
+    hostControls.classList.remove('active');
+  }
+  
+  // 显示模态框
+  modal.classList.add('active');
+}
+
+function hideUserList() {
+  const modal = document.getElementById('userListModal');
+  modal.classList.remove('active');
+}
+
+// 点击模态框外部关闭
+document.getElementById('userListModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    hideUserList();
+  }
+});
+
+// 房主控制功能
+function togglePauseRoom() {
+  if (!isHost) return;
+  
+  isRoomPaused = !isRoomPaused;
+  
+  // 广播房间暂停状态
+  connections.forEach(conn => {
+    if (conn.open) {
+      conn.send({
+        type: 'room-control',
+        action: 'pause',
+        paused: isRoomPaused
+      });
+    }
+  });
+  
+  // 更新UI
+  setRoomPaused(isRoomPaused);
+  
+  // 更新按钮文本
+  const pauseBtn = document.getElementById('pauseRoomBtn');
+  if (isRoomPaused) {
+    pauseBtn.innerHTML = '<i class="fas fa-play"></i> 恢复房间';
+    addSystemMessage('你已暂停房间');
+  } else {
+    pauseBtn.innerHTML = '<i class="fas fa-pause"></i> 暂停房间';
+    addSystemMessage('你已恢复房间');
+  }
+  
+  // 关闭用户列表模态框
+  hideUserList();
+}
+
+function setRoomPaused(paused) {
+  isRoomPaused = paused;
+  const chatMessages = document.getElementById('chatMessages');
+  const messageInput = document.getElementById('messageInput');
+  const sendButton = messageInput.nextElementSibling;
+  
+  if (paused && !isHost) {
+    // 非房主在房间暂停时不能发送消息
+    messageInput.disabled = true;
+    sendButton.disabled = true;
+    chatMessages.classList.add('room-paused');
+  } else {
+    // 房主或房间未暂停时可以发送消息
+    messageInput.disabled = false;
+    sendButton.disabled = false;
+    chatMessages.classList.remove('room-paused');
+  }
+}
+
+function deleteRoom() {
+  if (!isHost) return;
+  
+  if (confirm('确定要删除房间吗？所有用户将被断开连接。')) {
+    // 广播房间删除消息
+    connections.forEach(conn => {
+      if (conn.open) {
+        conn.send({
+          type: 'room-control',
+          action: 'delete'
+        });
+      }
+    });
+    
+    addSystemMessage('你已删除房间');
+    setTimeout(leaveRoom, 2000);
+  }
 }
 </script>
 
