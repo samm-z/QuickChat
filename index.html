@@ -5,6 +5,10 @@
   <!-- 修改viewport设置，添加maximum-scale和user-scalable=no以防止自动缩放 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>QuickChat</title>
+  
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4ac.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4ac.svg">
+  
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/localbase@1.5.0/dist/localbase.dev.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -33,6 +37,8 @@
       --modal-overlay: rgba(0, 0, 0, 0.5);
       --danger-color: #e53e3e;
       --warning-color: #dd6b20;
+      --checkbox-bg: #edf2f7;
+      --checkbox-checked-bg: #3182ce;
     }
 
     [data-theme="dark"] {
@@ -59,6 +65,8 @@
       --modal-overlay: rgba(0, 0, 0, 0.7);
       --danger-color: #c53030;
       --warning-color: #c05621;
+      --checkbox-bg: #4a5568;
+      --checkbox-checked-bg: #4299e1;
     }
 
     * {
@@ -456,16 +464,70 @@
       margin-bottom: 10px;
     }
 
+    /* 自定义复选框样式 */
     .password-checkbox-container {
       display: flex;
       align-items: center;
       gap: 10px;
       margin-bottom: 10px;
+      position: relative;
     }
 
+    /* 隐藏原始复选框 */
     .password-checkbox-container input[type="checkbox"] {
-      width: auto;
-      margin: 0;
+      opacity: 0;
+      position: absolute;
+      width: 0;
+      height: 0;
+    }
+
+    /* 创建自定义复选框 */
+    .custom-checkbox {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background-color: var(--checkbox-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    /* 复选框选中状态 */
+    .password-checkbox-container input[type="checkbox"]:checked + .custom-checkbox {
+      background-color: var(--checkbox-checked-bg);
+      border-color: var(--checkbox-checked-bg);
+    }
+
+    /* 复选框选中时的对勾 */
+    .password-checkbox-container input[type="checkbox"]:checked + .custom-checkbox::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 2px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      animation: checkmark 0.2s ease-in-out;
+    }
+
+    @keyframes checkmark {
+      0% {
+        opacity: 0;
+        transform: rotate(45deg) scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: rotate(45deg) scale(1);
+      }
+    }
+
+    /* 聚焦状态 */
+    .password-checkbox-container input[type="checkbox"]:focus + .custom-checkbox {
+      box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.4);
     }
 
     .password-input {
@@ -831,6 +893,111 @@
       font-weight: bold;
       z-index: 10;
     }
+
+    /* 更新弹窗样式 */
+    .update-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      width: 90%;
+      max-width: 450px;
+      padding: 25px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px var(--shadow-color);
+      z-index: 1002;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .update-popup.active {
+      display: block;
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .update-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 15px;
+    }
+
+    .update-icon {
+      width: 50px;
+      height: 50px;
+      background-color: var(--accent-primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .update-title {
+      flex: 1;
+    }
+
+    .update-title h3 {
+      font-size: 1.4rem;
+      color: var(--text-primary);
+      margin-bottom: 5px;
+    }
+
+    .update-title p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .update-content {
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .update-content ul {
+      margin-top: 10px;
+      margin-left: 20px;
+    }
+
+    .update-content li {
+      margin-bottom: 8px;
+    }
+
+    .update-content li:last-child {
+      margin-bottom: 0;
+    }
+
+    .update-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .update-actions button {
+      width: auto;
+      padding: 10px 20px;
+    }
+
+    .update-actions .secondary-button {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    .update-actions .secondary-button:hover {
+      background-color: var(--border-color);
+    }
+
+    .update-version {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: 15px;
+    }
   </style>
 </head>
 <body>
@@ -886,7 +1053,7 @@
   </div>
   <!-- 页脚 -->
   <div class="footer">
-    ©️Copyright Sam Zhang 2025 v1.5
+    ©️Copyright Sam Zhang 2025 v1.9
   </div>
 </div>
 
@@ -907,6 +1074,7 @@
   <h3><i class="fas fa-plus-circle"></i> 创建聊天房间</h3>
   <div class="password-checkbox-container">
     <input type="checkbox" id="passwordCheckbox" onchange="togglePasswordInput()">
+    <label for="passwordCheckbox" class="custom-checkbox"></label>
     <label for="passwordCheckbox">设置房间密码</label>
   </div>
   <div id="passwordInput" class="password-input">
@@ -941,6 +1109,31 @@
   </div>
 </div>
 
+<!-- 更新弹窗 -->
+<div class="update-popup" id="updatePopup">
+  <div class="update-header">
+    <div class="update-icon">
+      <i class="fas fa-bullhorn"></i>
+    </div>
+    <div class="update-title">
+      <h3>新版本更新</h3>
+      <p>QuickChat 已更新到 v1.9</p>
+    </div>
+  </div>
+  <div class="update-content">
+    <p>感谢您使用 QuickChat！我们进行了以下更新：</p>
+    <ul>
+      <li>修复了创建房间密码勾选框的bug</li>
+    </ul>
+  </div>
+  <div class="update-actions">
+    <button onclick="hideUpdatePopup(true)">OK</button>
+  </div>
+  <div class="update-version">
+    版本 1.9 - 2025年5月10日
+  </div>
+</div>
+
 <script>
 let peer;
 let connections = [];
@@ -952,11 +1145,45 @@ let userCount = 1;
 let roomUsers = []; // 存储房间内的用户信息
 let currentTheme = localStorage.getItem('theme') || 'system';
 let isRoomPaused = false; // 房间是否暂停状态
+let currentAppVersion = '1.8'; // 当前应用版本
 
 // 初始化昵称
 function initNickname() {
   const nicknameInput = document.getElementById('nicknameInput');
   nicknameInput.value = username;
+}
+
+// 检查更新并显示更新弹窗
+function checkForUpdates() {
+  const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '1.7';
+  
+  // 如果存储的版本与当前版本不同，显示更新弹窗
+  if (lastSeenVersion !== currentAppVersion) {
+    showUpdatePopup();
+  }
+}
+
+// 显示更新弹窗
+function showUpdatePopup() {
+  const updatePopup = document.getElementById('updatePopup');
+  updatePopup.style.display = 'block';
+  void updatePopup.offsetWidth;
+  updatePopup.classList.add('active');
+}
+
+// 隐藏更新弹窗
+function hideUpdatePopup(dontShowAgain) {
+  const updatePopup = document.getElementById('updatePopup');
+  updatePopup.classList.remove('active');
+  
+  setTimeout(() => {
+    updatePopup.style.display = 'none';
+  }, 400);
+  
+  // 如果用户点击了"了解了"，记录当前版本到本地存储
+  if (dontShowAgain) {
+    localStorage.setItem('lastSeenVersion', currentAppVersion);
+  }
 }
 
 function saveNickname() {
@@ -1038,6 +1265,8 @@ function initTheme() {
 
 initTheme();
 initNickname();
+// 页面加载完成后检查更新
+document.addEventListener('DOMContentLoaded', checkForUpdates);
 
 // 房间管理
 function showCreateRoomOptions() {
