@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>QuickChat v2.0</title>
+  <title>QuickChat</title>
   
   <link rel="icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4ac.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4ac.svg">
@@ -14,7 +14,8 @@
   <style>
     :root {
       --bg-primary: #f0f4f8;
-      --bg-secondary: #e2e8f0;
+      /* <CHANGE> 优化对比度: 将聊天背景设为更浅的颜色，以区分收到的消息气泡 */
+      --bg-secondary: #f7fbfc; 
       --card-bg: #ffffff;
       --text-primary: #2d3748;
       --text-secondary: #4a5568;
@@ -23,7 +24,8 @@
       --border-color: #e2e8f0;
       --sent-bg: #3182ce;
       --sent-text: #ffffff;
-      --received-bg: #e2e8f0;
+      /* 保持收到的消息气泡颜色，现在它与新的 --bg-secondary 有了对比 */
+      --received-bg: #e2e8f0; 
       --received-text: #2d3748;
       --system-bg: #edf2f7;
       --system-text: #718096;
@@ -37,7 +39,7 @@
       --warning-color: #dd6b20;
       --checkbox-bg: #edf2f7;
       --checkbox-checked-bg: #3182ce;
-      /* v2.0 提及颜色 */
+      /* <CHANGE> 新增：白色用于@提及文字 */
       --mention-color: #ffffff;
     }
 
@@ -66,7 +68,7 @@
       --warning-color: #c05621;
       --checkbox-bg: #4a5568;
       --checkbox-checked-bg: #4299e1;
-      /* v2.0 提及颜色 */
+      /* <CHANGE> 白色用于@提及文字 */
       --mention-color: #ffffff;
     }
 
@@ -342,29 +344,42 @@
       border-radius: 3px;
     }
 
-    /* 消息回复样式 */
+    /* 新增：消息回复样式 */
     .message-reply {
       display: flex;
       gap: 10px;
-      font-size: 0.8rem; /* 稍微缩小字体 */
-      padding: 6px 10px; /* 缩小内边距 */
-      background: rgba(255, 255, 255, 0.1);
-      border-left: 3px solid var(--accent-secondary); /* 更改颜色以区分边框 */
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      /* 使用透明度来实现浅色主题下的背景对比 */
+      background: var(--bg-primary); 
+      border-left: 3px solid var(--accent-primary);
       border-radius: 4px;
       margin-bottom: 5px;
       cursor: pointer;
       transition: all 0.2s ease;
-      color: inherit; /* 继承父消息的文本颜色 */
+    }
+    
+    /* 修正：在收到的消息气泡中，回复引用文字应使用深色 */
+    .received .message-reply-sender,
+    .received .message-reply-content {
+        color: var(--received-text);
+    }
+
+    /* 修正：在发送的消息气泡中，回复引用文字应使用浅色/白色 */
+    .sent .message-reply-sender,
+    .sent .message-reply-content {
+        color: var(--sent-text);
     }
 
     .message-reply:hover {
-      background: rgba(255, 255, 255, 0.15);
+      /* 使用更深的背景色来增加悬停效果 */
+      background: var(--border-color); 
     }
 
     .message-reply-sender {
+      /* <CHANGE> 修改@提及颜色为白色，在蓝色背景上更清晰 */
       color: var(--mention-color);
       font-weight: 600;
-      /* 修复：在深色主题下，发送者名字在白色消息中会变暗，这里保持高亮 */
     }
 
     .message-reply-content {
@@ -372,11 +387,9 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      flex-shrink: 1; /* 允许内容缩小 */
-      opacity: 0.9;
     }
 
-    /* 消息操作按钮 */
+    /* 新增：消息操作按钮 */
     .message-actions {
       display: none;
       position: absolute;
@@ -390,12 +403,6 @@
       z-index: 10;
     }
     
-    [data-theme="dark"] .message-actions {
-        background: rgba(45, 55, 72, 0.95);
-        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.15);
-    }
-
-
     .message:hover .message-actions {
       display: flex;
     }
@@ -418,18 +425,24 @@
       transform: scale(1.05);
     }
 
-    /* @提及样式 */
+    /* 新增：@提及样式 */
     .mention {
+      /* <CHANGE> 修改@提及颜色为白色，在蓝色消息背景上清晰可见 */
       color: var(--mention-color);
       font-weight: 600;
       cursor: pointer;
+    }
+    
+    /* 修正：在收到的消息气泡中，@提及文字应使用深色 */
+    .received .mention {
+        color: var(--accent-primary);
     }
 
     .mention:hover {
       text-decoration: underline;
     }
 
-    /* @提及列表 */
+    /* 新增：@提及列表 */
     .mention-list {
       position: absolute;
       bottom: 45px;
@@ -459,7 +472,7 @@
       font-weight: 600;
     }
 
-    /* 引用提示 */
+    /* 新增：引用提示 */
     .reply-indicator {
       display: flex;
       align-items: center;
@@ -469,8 +482,6 @@
       background: var(--bg-secondary);
       border-left: 3px solid var(--accent-primary);
       border-radius: 4px;
-      font-size: 0.9rem;
-      color: var(--text-primary);
     }
 
     .reply-indicator-close {
@@ -482,7 +493,6 @@
       padding: 0;
       width: auto;
       height: auto;
-      font-size: 1.2rem;
     }
 
     .reply-indicator-close:hover {
@@ -1167,7 +1177,7 @@
     
     <div class="chat-footer">
       <div id="replyIndicator" class="reply-indicator" style="display: none;">
-        <span>回复：<strong id="replyToContent"></strong></span>
+        <span><strong id="replyToUser"></strong></span>
         <button class="reply-indicator-close" onclick="clearReply()">×</button>
       </div>
 
@@ -1233,31 +1243,28 @@
 </div>
 
 <div class="update-popup" id="updatePopup">
-  <div class="modal-overlay"></div>
-  <div class="update-popup-content">
-    <div class="update-header">
-      <div class="update-icon">
-        <i class="fas fa-bullhorn"></i>
-      </div>
-      <div class="update-title">
-        <h3>新版本更新</h3>
-        <p>QuickChat 已更新到 v2.0</p>
-      </div>
+  <div class="update-header">
+    <div class="update-icon">
+      <i class="fas fa-bullhorn"></i>
     </div>
-    <div class="update-content">
-      <p>感谢您使用 QuickChat！我们在 v2.0 中进行了以下更新：</p>
-      <ul>
-        <li>回复功能优化: 修复了回复引用和指示器显示格式的问题，现在更加简洁易读。</li>
-        <li>房主逻辑改进: 确保房主 ID 在用户列表中被正确初始化和广播。</li>
-        <li>UI/UX 调整: 优化了消息操作按钮的样式和交互。</li>
-      </ul>
+    <div class="update-title">
+      <h3>新版本更新</h3>
+      <p>QuickChat 已更新到 v2.0</p>
     </div>
-    <div class="update-actions">
-      <button onclick="hideUpdatePopup(true)">OK</button>
-    </div>
-    <div class="update-version">
-      版本 2.0 - 2025年11月16日
-    </div>
+  </div>
+  <div class="update-content">
+    <p>感谢您使用 QuickChat！我们进行了以下更新：</p>
+    <ul>
+      <li>新增消息回复功能</li>
+      <li>新增@提及用户功能</li>
+      <li>修复颜色对比问题</li>
+    </ul>
+  </div>
+  <div class="update-actions">
+    <button onclick="hideUpdatePopup(true)">OK</button>
+  </div>
+  <div class="update-version">
+    版本 2.0 - 2025年11月16日
   </div>
 </div>
 
@@ -1272,9 +1279,10 @@ let userCount = 1;
 let roomUsers = [];
 let currentTheme = localStorage.getItem('theme') || 'system';
 let isRoomPaused = false;
-let currentAppVersion = '2.0'; // V2.0版本号更新
+let currentAppVersion = '1.9';
 
 let replyToMessage = null;
+let replyToSender = null;
 
 function initNickname() {
   const nicknameInput = document.getElementById('nicknameInput');
@@ -1282,7 +1290,7 @@ function initNickname() {
 }
 
 function checkForUpdates() {
-  const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '1.7'; // 假设1.7是上一个大版本
+  const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '1.7';
   
   if (lastSeenVersion !== currentAppVersion) {
     showUpdatePopup();
@@ -1494,9 +1502,8 @@ function initPeer() {
   document.getElementById('roomInfo').textContent = `房间号: ${roomId}`;
   updateUserCount();
   
-  // V2.0 优化: 初始 user id 设为 null，在 peer.on('open') 中更新
   roomUsers = [{
-    id: null, 
+    id: isHost ? roomId : null,
     username: username,
     isHost: isHost,
     joinTime: new Date().toISOString()
@@ -1506,7 +1513,6 @@ function initPeer() {
     peer = new Peer(roomId);
     
     peer.on('open', (id) => {
-      // V2.0 优化: 确保房主 ID 被正确设置
       roomUsers[0].id = id;
       addSystemMessage('房间创建成功，等待其他用户加入...');
     });
@@ -1518,7 +1524,7 @@ function initPeer() {
     peer = new Peer();
     
     peer.on('open', (id) => {
-      roomUsers[0].id = id; // V2.0 优化: 确保自己 ID 被设置
+      roomUsers[0].id = id;
       
       const conn = peer.connect(roomId, {
         reliable: true,
@@ -1608,7 +1614,6 @@ function handleNewConnection(conn) {
         
         roomUsers.push(newUser);
         
-        // 房主发送当前房间状态和用户列表
         conn.send({
           type: 'auth-result',
           success: true,
@@ -1662,7 +1667,6 @@ function setupConnection(conn) {
         
         if (data.userList) {
           roomUsers = data.userList;
-          // 确保自己的信息也在 userList 中 (对于客户端)
           if (!roomUsers.find(user => user.id === peer.id)) {
             roomUsers.push({
               id: peer.id,
@@ -1705,7 +1709,6 @@ function setupConnection(conn) {
     const index = connections.indexOf(conn);
     if (index > -1) connections.splice(index, 1);
     
-    // V2.0 优化: 确保 conn.userId 存在
     const userIndex = roomUsers.findIndex(user => user.id === conn.userId);
     if (userIndex > -1) {
       const leftUser = roomUsers[userIndex];
@@ -1733,14 +1736,7 @@ function setupConnection(conn) {
 }
 
 function highlightMentions(text) {
-  // 匹配 @昵称，但不匹配 @ 后面紧跟空格的情况
-  return text.replace(/@(\S+)/g, (match, p1) => {
-    // 检查 p1 (昵称部分) 是否只包含非空字符
-    if (p1.trim() === p1) {
-      return `<span class="mention">@${p1}</span>`;
-    }
-    return match; // 不进行替换
-  });
+  return text.replace(/@(\S+)/g, '<span class="mention">@$1</span>');
 }
 
 /**
@@ -1753,13 +1749,13 @@ function setReplyTo(sender, content, messageId) {
   replyToMessage = { sender, content, messageId };
   
   const indicator = document.getElementById('replyIndicator');
-  const replyToContentSpan = document.getElementById('replyToContent');
   
-  // 截取内容，显示格式: [发送者]: [被回复内容...]
+  // 截取内容，避免太长
   const displayContent = content.length > 30 ? content.substring(0, 30) + '...' : content;
   
-  // V2.0 优化: 更改回复指示器的显示内容
-  replyToContentSpan.innerHTML = `${sender}: ${displayContent}`;
+  // *** 更改点 1: 修改回复指示器的显示格式为 "回复：【消息】" ***
+  // 注意：如果您的 HTML 中仍有 "回复给: "，最终显示将是 "回复给: 回复：【消息】"
+  document.getElementById('replyToUser').textContent = `回复：${displayContent}`;
   
   indicator.style.display = 'flex';
   
@@ -1769,13 +1765,13 @@ function setReplyTo(sender, content, messageId) {
 function clearReply() {
   replyToMessage = null;
   document.getElementById('replyIndicator').style.display = 'none';
-  document.getElementById('replyToContent').textContent = ''; // 清空提示内容
+  document.getElementById('replyToUser').textContent = ''; // 清空提示内容
 }
 
 function showMentionList(searchText) {
   const mentionList = document.getElementById('mentionList');
   const filteredUsers = roomUsers.filter(user => 
-    user.username && user.username.toLowerCase().includes(searchText.toLowerCase())
+    user.username.toLowerCase().includes(searchText.toLowerCase())
   );
   
   if (filteredUsers.length === 0 || searchText.length === 0) {
@@ -1946,12 +1942,11 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
       }
     };
     
-    // V2.0 优化: 消息气泡内部的回复引用格式
+    // *** 更改点 2: 修改消息气泡内部的回复引用格式为 "回复：【消息】" ***
     const displayContent = replyTo.content.length > 20 ? replyTo.content.substring(0, 20) + '...' : replyTo.content;
     
     replyDiv.innerHTML = `
-      <span class="message-reply-sender">${replyTo.sender}：</span>
-      <span class="message-reply-content">${displayContent}</span>
+      <span class="message-reply-sender">回复：【${displayContent}】</span>
     `;
     
     msgDiv.appendChild(replyDiv);
@@ -2021,7 +2016,6 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
     
     msgDiv.addEventListener('mouseleave', function() {
       // 只有在鼠标离开整个消息气泡时才隐藏
-      // 修复：如果鼠标停留在 action button 上，不应隐藏
       if (actionsDiv.contains(document.activeElement)) {
         return; 
       }
@@ -2084,14 +2078,13 @@ function showUserList() {
     const userItem = document.createElement('li');
     userItem.className = 'user-item';
     
-    // 确保 user.username 不为空
-    const avatarChar = user.username ? user.username.charAt(0).toUpperCase() : '?';
+    const avatarChar = user.username.charAt(0).toUpperCase();
     
     userItem.innerHTML = `
       <div class="user-avatar">${avatarChar}</div>
       <div class="user-info">
         <div class="user-name">
-          ${user.username || '未知用户'}
+          ${user.username}
           ${user.isHost ? '<span class="host-badge">房主</span>' : ''}
         </div>
         <div class="user-status">${user.id === peer.id ? '(我)' : ''}</div>
