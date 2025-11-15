@@ -2,6 +2,7 @@
 <html lang="zh" data-theme="light">
 <head>
   <meta charset="UTF-8">
+  <!-- 修改viewport设置，添加maximum-scale和user-scalable=no以防止自动缩放 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>QuickChat</title>
   
@@ -38,9 +39,6 @@
       --warning-color: #dd6b20;
       --checkbox-bg: #edf2f7;
       --checkbox-checked-bg: #3182ce;
-      --mention-bg: #fef3c7;
-      --mention-text: #92400e;
-      --reply-border: #cbd5e0;
     }
 
     [data-theme="dark"] {
@@ -69,9 +67,6 @@
       --warning-color: #c05621;
       --checkbox-bg: #4a5568;
       --checkbox-checked-bg: #4299e1;
-      --mention-bg: #78350f;
-      --mention-text: #fcd34d;
-      --reply-border: #4a5568;
     }
 
     * {
@@ -362,69 +357,55 @@
       height: 40px;
     }
 
-    /* 添加回复预览样式 */
-    .reply-preview {
+    /* 添加回复指示区域和@提及下拉菜单样式 */
+    .reply-indicator {
       display: none;
-      padding: 10px;
-      margin-bottom: 8px;
-      background-color: var(--bg-secondary);
+      padding: 8px 12px;
+      background: var(--bg-secondary);
       border-left: 3px solid var(--accent-primary);
-      border-radius: 6px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
       position: relative;
     }
 
-    .reply-preview.active {
+    .reply-indicator.active {
       display: block;
     }
 
-    .reply-preview-header {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      margin-bottom: 5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .reply-preview-content {
-      font-size: 0.9rem;
-      color: var(--text-primary);
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 60px;
-      overflow: hidden;
-    }
-
-    .reply-preview-close {
+    .reply-indicator-close {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
       background: none;
       border: none;
       color: var(--text-secondary);
       cursor: pointer;
       font-size: 1rem;
+      padding: 4px;
       width: auto;
-      padding: 0 5px;
       height: auto;
-      margin: 0;
     }
 
-    .reply-preview-close:hover {
-      color: var(--danger-color);
+    .reply-indicator-close:hover {
+      color: var(--accent-primary);
     }
 
-    /* 添加@提示下拉菜单 */
     .mention-dropdown {
       display: none;
       position: absolute;
-      bottom: 100%;
+      bottom: 50px;
       left: 0;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      max-height: 150px;
-      overflow-y: auto;
+      box-shadow: 0 -4px 12px var(--shadow-color);
       z-index: 100;
-      min-width: 150px;
-      box-shadow: 0 -5px 15px var(--shadow-color);
+      max-width: 300px;
+      max-height: 200px;
+      overflow-y: auto;
     }
 
     .mention-dropdown.active {
@@ -434,9 +415,12 @@
     .mention-item {
       padding: 10px 15px;
       cursor: pointer;
-      color: var(--text-primary);
-      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border-color);
       transition: background-color 0.2s ease;
+    }
+
+    .mention-item:last-child {
+      border-bottom: none;
     }
 
     .mention-item:hover {
@@ -446,41 +430,6 @@
     .mention-item.selected {
       background-color: var(--accent-primary);
       color: white;
-    }
-
-    /* 添加消息操作按钮 */
-    .message-actions {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 0;
-      gap: 5px;
-      background: rgba(0, 0, 0, 0.8);
-      border-radius: 6px;
-      padding: 5px;
-    }
-
-    .message:hover .message-actions {
-      display: flex;
-    }
-
-    .action-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 0.8rem;
-      cursor: pointer;
-      padding: 5px 8px;
-      border-radius: 4px;
-      width: auto;
-      height: auto;
-      margin: 0;
-      transition: background-color 0.2s ease;
-    }
-
-    .action-btn:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-      transform: none;
     }
 
     .message {
@@ -514,43 +463,73 @@
       vertical-align: middle;
     }
 
-    /* 添加回复内容显示 */
+    /* 添加消息内容和回复容器样式 */
+    .message-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .message-reply {
       display: block;
-      font-size: 0.8rem;
-      margin-bottom: 5px;
-      padding: 6px;
-      background-color: rgba(0, 0, 0, 0.1);
-      border-left: 2px solid currentColor;
+      font-size: 0.85rem;
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, 0.1);
       border-radius: 4px;
-      cursor: pointer;
+      margin-bottom: 4px;
       opacity: 0.9;
-      transition: opacity 0.2s ease;
     }
 
-    .message-reply:hover {
-      opacity: 1;
-    }
-
-    .message-reply-sender {
+    .message-reply-label {
       font-weight: 600;
-      margin-bottom: 2px;
+      display: block;
     }
 
-    .message-reply-content {
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 40px;
-      overflow: hidden;
+    .message-text {
+      word-wrap: break-word;
     }
 
-    /* 添加@提及高亮 */
-    .message-mention {
-      background-color: var(--mention-bg);
-      color: var(--mention-text);
-      padding: 2px 4px;
-      border-radius: 3px;
-      font-weight: 500;
+    /* 高亮@提及的用户名 */
+    .mention-highlight {
+      background-color: rgba(49, 130, 206, 0.2);
+      padding: 0 2px;
+      border-radius: 2px;
+      font-weight: 600;
+      color: var(--accent-primary);
+    }
+
+    .message-actions {
+      display: none;
+      gap: 5px;
+      position: absolute;
+      top: -30px;
+      right: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 4px;
+    }
+
+    .message:hover .message-actions {
+      display: flex;
+    }
+
+    .message-action-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 0.9rem;
+      width: auto;
+      height: auto;
+      transition: color 0.2s ease;
+    }
+
+    .message-action-btn:hover {
+      color: var(--accent-primary);
+      transform: none;
+      box-shadow: none;
     }
 
     @keyframes messageFadeIn {
@@ -743,12 +722,8 @@
       }
 
       .message-actions {
-        display: flex;
-      }
-
-      .action-btn {
-        font-size: 0.7rem;
-        padding: 3px 6px;
+        position: static;
+        margin-top: 8px;
       }
     }
 
@@ -1191,21 +1166,19 @@
     <div class="chat-messages" id="chatMessages"></div>
     
     <div class="chat-footer">
-      <!-- 添加回复预览 -->
-      <div class="reply-preview" id="replyPreview">
-        <div class="reply-preview-header">
-          <span>回复: <strong id="replyPreviewSender"></strong></span>
-          <button class="reply-preview-close" onclick="cancelReply()">×</button>
-        </div>
-        <div class="reply-preview-content" id="replyPreviewContent"></div>
+      <!-- 添加回复指示区域 -->
+      <div class="reply-indicator" id="replyIndicator">
+        <span>↳ 回复: <strong id="replyToName"></strong> "<span id="replyToText"></span>"</span>
+        <button class="reply-indicator-close" onclick="clearReply()"><i class="fas fa-times"></i></button>
       </div>
 
-      <!-- 添加@提示下拉菜单 -->
-      <div class="mention-dropdown" id="mentionDropdown"></div>
-
-      <div class="message-input-container">
-        <input type="text" id="messageInput" placeholder="输入消息...输入 @ 提及用户">
-        <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+      <div style="position: relative;">
+        <div class="message-input-container">
+          <!-- 添加@提及下拉菜单容器 -->
+          <div class="mention-dropdown" id="mentionDropdown"></div>
+          <input type="text" id="messageInput" placeholder="输入消息... (输入@可提及用户)">
+          <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
       </div>
       
       <button onclick="leaveRoom()" class="exit-button"><i class="fas fa-sign-out-alt"></i> 退出房间</button>
@@ -1213,7 +1186,7 @@
   </div>
 
   <div class="footer">
-    ©️Copyright Sam Zhang 2025 v2.0 (Enhanced)
+    ©️Copyright Sam Zhang 2025 v2.0
   </div>
 </div>
 
@@ -1274,18 +1247,17 @@
     </div>
   </div>
   <div class="update-content">
-    <p>感谢您使用 QuickChat！我们进行了以下更新：</p>
+    <p>感谢您使用 QuickChat！我们添加了以下新功能：</p>
     <ul>
-      <li>✨ 添加消息回复功能 - 可回复任意消息</li>
-      <li>✨ 添加 @提及用户功能 - 输入 @ 快速提及</li>
-      <li>🎯 完整保留原有功能和样式</li>
+      <li>支持回复消息功能</li>
+      <li>支持@提及其他用户</li>
     </ul>
   </div>
   <div class="update-actions">
     <button onclick="hideUpdatePopup(true)">OK</button>
   </div>
   <div class="update-version">
-    版本 2.0 - 2025年1月16日
+    版本 2.0 - 2025年11月
   </div>
 </div>
 
@@ -1302,11 +1274,9 @@ let currentTheme = localStorage.getItem('theme') || 'system';
 let isRoomPaused = false;
 let currentAppVersion = '2.0';
 
-let messageId = 0;
-let messages = [];
-let replyingTo = null;
-let mentionUsers = [];
-let mentionIndex = -1;
+let currentReplyTo = null;
+let mentionFilteredUsers = [];
+let mentionSelectedIndex = -1;
 
 function initNickname() {
   const nicknameInput = document.getElementById('nicknameInput');
@@ -1314,7 +1284,7 @@ function initNickname() {
 }
 
 function checkForUpdates() {
-  const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '1.9';
+  const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '1.8';
   
   if (lastSeenVersion !== currentAppVersion) {
     showUpdatePopup();
@@ -1371,6 +1341,7 @@ function saveNickname() {
 
 function setTheme(theme) {
   currentTheme = theme;
+  
   const themeIcon = document.getElementById('themeIcon');
   
   if (theme === 'system') {
@@ -1536,6 +1507,7 @@ function initPeer() {
   if (isHost) {
     peer = new Peer(roomId);
     
+    // 房间创建成功
     peer.on('open', (id) => {
       roomUsers[0].id = id;
       addSystemMessage('房间创建成功，等待其他用户加入...');
@@ -1547,6 +1519,7 @@ function initPeer() {
   } else {
     peer = new Peer();
     
+    // 客户端连接房间
     peer.on('open', (id) => {
       roomUsers[0].id = id;
       
@@ -1584,7 +1557,10 @@ function initPeer() {
     }
   });
   
-  document.getElementById('messageInput').addEventListener('keypress', handleMessageInputKeypress);
+  document.getElementById('messageInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendMessage();
+  });
+
   document.getElementById('messageInput').addEventListener('input', handleMentionInput);
   
   document.getElementById('joinRoomInput').addEventListener('keypress', function(e) {
@@ -1594,130 +1570,6 @@ function initPeer() {
   document.getElementById('joinRoomPassword').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') joinRoom();
   });
-}
-
-function handleMentionInput(e) {
-  const input = e.target;
-  const text = input.value;
-  const cursorPos = input.selectionStart;
-  
-  // 查找最后一个 @ 符号
-  const lastAtIndex = text.lastIndexOf('@', cursorPos - 1);
-  
-  if (lastAtIndex !== -1 && lastAtIndex === cursorPos - 1) {
-    // @ 后面没有内容，显示所有用户
-    showMentionDropdown(text.substring(lastAtIndex));
-  } else if (lastAtIndex !== -1) {
-    // 获取 @ 后的文本
-    const searchText = text.substring(lastAtIndex + 1, cursorPos);
-    
-    // 检查是否是有效的搜索（只有字母、数字、下划线）
-    if (/^[a-zA-Z0-9_\u4e00-\u9fff]*$/.test(searchText)) {
-      showMentionDropdown('@' + searchText);
-    } else {
-      hideMentionDropdown();
-    }
-  } else {
-    hideMentionDropdown();
-  }
-}
-
-function showMentionDropdown(searchText) {
-  const dropdown = document.getElementById('mentionDropdown');
-  const search = searchText.substring(1).toLowerCase();
-  
-  const matchedUsers = roomUsers.filter(user => 
-    user.username.toLowerCase().includes(search) && user.username !== username
-  );
-  
-  if (matchedUsers.length === 0) {
-    hideMentionDropdown();
-    return;
-  }
-  
-  dropdown.innerHTML = '';
-  mentionIndex = -1;
-  mentionUsers = matchedUsers;
-  
-  matchedUsers.forEach((user, index) => {
-    const item = document.createElement('div');
-    item.className = 'mention-item';
-    item.innerHTML = `<i class="fas fa-user-circle"></i> ${user.username}`;
-    item.onclick = () => selectMention(user.username);
-    dropdown.appendChild(item);
-  });
-  
-  dropdown.classList.add('active');
-}
-
-function hideMentionDropdown() {
-  const dropdown = document.getElementById('mentionDropdown');
-  dropdown.classList.remove('active');
-  mentionUsers = [];
-  mentionIndex = -1;
-}
-
-function selectMention(username) {
-  const input = document.getElementById('messageInput');
-  const text = input.value;
-  const cursorPos = input.selectionStart;
-  
-  const lastAtIndex = text.lastIndexOf('@', cursorPos - 1);
-  
-  if (lastAtIndex !== -1) {
-    const beforeAt = text.substring(0, lastAtIndex);
-    const afterCursor = text.substring(cursorPos);
-    
-    const newText = beforeAt + '@' + username + ' ' + afterCursor;
-    input.value = newText;
-    input.selectionStart = input.selectionEnd = beforeAt.length + username.length + 2;
-    
-    hideMentionDropdown();
-    input.focus();
-  }
-}
-
-function handleMessageInputKeypress(e) {
-  if (e.key === 'Enter') {
-    if (document.getElementById('mentionDropdown').classList.contains('active')) {
-      if (mentionUsers.length > 0) {
-        mentionIndex = (mentionIndex + 1) % mentionUsers.length;
-        updateMentionSelection();
-      }
-    } else {
-      sendMessage();
-    }
-  }
-}
-
-function updateMentionSelection() {
-  const items = document.querySelectorAll('.mention-item');
-  items.forEach((item, index) => {
-    if (index === mentionIndex) {
-      item.classList.add('selected');
-    } else {
-      item.classList.remove('selected');
-    }
-  });
-}
-
-function cancelReply() {
-  replyingTo = null;
-  const preview = document.getElementById('replyPreview');
-  preview.classList.remove('active');
-}
-
-function replyToMessage(msgId) {
-  const msg = messages.find(m => m.id === msgId);
-  if (!msg) return;
-  
-  replyingTo = msg;
-  const preview = document.getElementById('replyPreview');
-  document.getElementById('replyPreviewSender').textContent = msg.sender;
-  document.getElementById('replyPreviewContent').textContent = msg.content;
-  preview.classList.add('active');
-  
-  document.getElementById('messageInput').focus();
 }
 
 function handleNewConnection(conn) {
@@ -1782,10 +1634,10 @@ function setupConnection(conn) {
         return;
       }
       
-      addMessage(data.sender, data.content, 'received', data.isHost, data.replyTo, data.mentions);
+      addMessage(data.sender, data.content, 'received', data.isHost, data.replyTo);
       
       if (isHost && data.sender !== username) {
-        broadcastMessage(data.sender, data.content, conn, data.replyTo, data.mentions);
+        broadcastMessage(data.sender, data.content, conn, data.replyTo);
       }
     } else if (data.type === 'system') {
       addSystemMessage(data.content);
@@ -1865,6 +1717,100 @@ function setupConnection(conn) {
   });
 }
 
+function handleMentionInput(e) {
+  const input = e.target;
+  const content = input.value;
+  const cursorPos = input.selectionStart;
+  
+  // 查找光标前最近的@符号
+  const textBeforeCursor = content.substring(0, cursorPos);
+  const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+  
+  if (lastAtIndex === -1) {
+    closeMentionDropdown();
+    return;
+  }
+  
+  // 检查@后面是否有空格（有空格说明已经完成提及）
+  const textAfterAt = content.substring(lastAtIndex + 1, cursorPos);
+  if (textAfterAt.includes(' ')) {
+    closeMentionDropdown();
+    return;
+  }
+  
+  // 获取@后的搜索文本
+  const searchText = textAfterAt.toLowerCase();
+  
+  // 过滤用户列表
+  mentionFilteredUsers = roomUsers.filter(user => 
+    user.username.toLowerCase().includes(searchText) && searchText !== ''
+  );
+  
+  if (mentionFilteredUsers.length === 0) {
+    closeMentionDropdown();
+    return;
+  }
+  
+  // 显示下拉菜单
+  showMentionDropdown(mentionFilteredUsers, lastAtIndex, cursorPos);
+}
+
+function showMentionDropdown(users, atIndex, cursorPos) {
+  const dropdown = document.getElementById('mentionDropdown');
+  dropdown.innerHTML = '';
+  
+  users.forEach((user, index) => {
+    const item = document.createElement('div');
+    item.className = 'mention-item';
+    if (index === 0) item.classList.add('selected');
+    item.textContent = user.username;
+    item.onclick = () => selectMention(user.username, atIndex, cursorPos);
+    dropdown.appendChild(item);
+  });
+  
+  dropdown.classList.add('active');
+  mentionSelectedIndex = 0;
+}
+
+function closeMentionDropdown() {
+  document.getElementById('mentionDropdown').classList.remove('active');
+  mentionSelectedIndex = -1;
+}
+
+function selectMention(username, atIndex, cursorPos) {
+  const input = document.getElementById('messageInput');
+  const content = input.value;
+  
+  // 找到@后的结束位置（到下一个空格或末尾）
+  const afterAt = content.substring(atIndex + 1);
+  const spaceIndex = afterAt.indexOf(' ');
+  const endIndex = atIndex + 1 + (spaceIndex === -1 ? afterAt.length : spaceIndex);
+  
+  // 替换@xxx为@username
+  const newContent = content.substring(0, atIndex) + '@' + username + content.substring(endIndex);
+  input.value = newContent;
+  
+  // 设置光标位置
+  const newCursorPos = atIndex + username.length + 1;
+  input.setSelectionRange(newCursorPos, newCursorPos);
+  
+  closeMentionDropdown();
+  input.focus();
+}
+
+function clearReply() {
+  currentReplyTo = null;
+  document.getElementById('replyIndicator').classList.remove('active');
+}
+
+function setReplyTo(replyData) {
+  currentReplyTo = replyData;
+  document.getElementById('replyToName').textContent = replyData.sender;
+  document.getElementById('replyToText').textContent = replyData.content.substring(0, 50);
+  document.getElementById('replyIndicator').classList.add('active');
+  document.getElementById('messageInput').focus();
+}
+
 function sendMessage() {
   if (isRoomPaused && !isHost) {
     addSystemMessage('房间已被暂停，暂时无法发送消息');
@@ -1875,19 +1821,10 @@ function sendMessage() {
   const content = input.value.trim();
   
   if (content) {
-    messageId++;
-    
-    const mentions = [];
-    const mentionRegex = /@([^\s@]+)/g;
-    let match;
-    while ((match = mentionRegex.exec(content)) !== null) {
-      mentions.push(match[1]);
-    }
-    
-    addMessage(username, content, 'sent', isHost, replyingTo, mentions);
+    addMessage(username, content, 'sent', isHost, currentReplyTo);
     
     if (isHost) {
-      broadcastMessage(username, content, null, replyingTo, mentions);
+      broadcastMessage(username, content, null, currentReplyTo);
     } else {
       connections.forEach(conn => {
         if (conn.open) {
@@ -1896,21 +1833,19 @@ function sendMessage() {
             sender: username,
             content: content,
             isHost: false,
-            replyTo: replyingTo,
-            mentions: mentions
+            replyTo: currentReplyTo
           });
         }
       });
     }
     
+    clearReply();
     input.value = '';
-    replyingTo = null;
-    document.getElementById('replyPreview').classList.remove('active');
     input.focus();
   }
 }
 
-function broadcastMessage(sender, content, exclude = null, replyTo = null, mentions = []) {
+function broadcastMessage(sender, content, exclude = null, replyTo = null) {
   connections.forEach(conn => {
     if (conn.open && conn !== exclude) {
       conn.send({
@@ -1918,8 +1853,7 @@ function broadcastMessage(sender, content, exclude = null, replyTo = null, menti
         sender: sender,
         content: content,
         isHost: isHost,
-        replyTo: replyTo,
-        mentions: mentions
+        replyTo: replyTo
       });
     }
   });
@@ -1982,30 +1916,10 @@ function updateUserCount() {
   document.getElementById('userCount').textContent = count;
 }
 
-function addMessage(sender, text, type, isHostMessage = false, replyTo = null, mentions = []) {
+function addMessage(sender, text, type, isHostMessage = false, replyTo = null) {
   const msgDiv = document.createElement('div');
   msgDiv.classList.add('message', type);
-  msgDiv.setAttribute('data-msg-id', messageId);
-  
-  const msgData = {
-    id: messageId,
-    sender: sender,
-    content: text,
-    type: type,
-    isHost: isHostMessage,
-    replyTo: replyTo,
-    mentions: mentions
-  };
-  
-  messages.push(msgData);
-  
-  // 添加回复信息显示
-  if (replyTo) {
-    const replyDiv = document.createElement('div');
-    replyDiv.className = 'message-reply';
-    replyDiv.innerHTML = `<div class="message-reply-sender">↳ 回复 ${replyTo.sender}</div><div class="message-reply-content">${escapeHtml(replyTo.content)}</div>`;
-    msgDiv.appendChild(replyDiv);
-  }
+  msgDiv.style.position = 'relative';
   
   const senderSpan = document.createElement('span');
   senderSpan.classList.add('sender');
@@ -2020,34 +1934,51 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
   
   msgDiv.appendChild(senderSpan);
   
-  // 处理@提及和内容显示
-  const contentSpan = document.createElement('span');
-  const processedContent = processMessageContent(text, mentions);
-  contentSpan.innerHTML = processedContent;
-  msgDiv.appendChild(contentSpan);
+  // 创建消息内容容器
+  const contentDiv = document.createElement('div');
+  contentDiv.classList.add('message-content');
   
-  const actions = document.createElement('div');
-  actions.className = 'message-actions';
+  // 如果是回复消息，显示被回复的消息
+  if (replyTo) {
+    const replyDiv = document.createElement('div');
+    replyDiv.classList.add('message-reply');
+    replyDiv.innerHTML = `<span class="message-reply-label">↳ 回复 ${replyTo.sender}:</span> "${replyTo.content.substring(0, 40)}"`;
+    contentDiv.appendChild(replyDiv);
+  }
+  
+  // 处理文本中的@提及高亮
+  const textSpan = document.createElement('span');
+  textSpan.classList.add('message-text');
+  
+  // 高亮@mention
+  const mentionRegex = /@(\w+)/g;
+  const highlightedText = text.replace(mentionRegex, '<span class="mention-highlight">@$1</span>');
+  textSpan.innerHTML = highlightedText;
+  
+  contentDiv.appendChild(textSpan);
+  msgDiv.appendChild(contentDiv);
+  
+  const actionsDiv = document.createElement('div');
+  actionsDiv.classList.add('message-actions');
   
   const replyBtn = document.createElement('button');
-  replyBtn.className = 'action-btn';
+  replyBtn.classList.add('message-action-btn');
   replyBtn.innerHTML = '<i class="fas fa-reply"></i>';
-  replyBtn.title = '回复此消息';
-  replyBtn.onclick = () => replyToMessage(messageId);
-  actions.appendChild(replyBtn);
+  replyBtn.title = '回复';
+  replyBtn.onclick = () => setReplyTo({ sender: sender, content: text });
   
   const mentionBtn = document.createElement('button');
-  mentionBtn.className = 'action-btn';
+  mentionBtn.classList.add('message-action-btn');
   mentionBtn.innerHTML = '<i class="fas fa-at"></i>';
-  mentionBtn.title = '提及此用户';
+  mentionBtn.title = '提及';
   mentionBtn.onclick = () => {
-    const input = document.getElementById('messageInput');
-    input.value += '@' + sender + ' ';
-    input.focus();
+    document.getElementById('messageInput').value += ` @${sender} `;
+    document.getElementById('messageInput').focus();
   };
-  actions.appendChild(mentionBtn);
   
-  msgDiv.appendChild(actions);
+  actionsDiv.appendChild(replyBtn);
+  actionsDiv.appendChild(mentionBtn);
+  msgDiv.appendChild(actionsDiv);
   
   document.getElementById('chatMessages').appendChild(msgDiv);
   
@@ -2056,30 +1987,6 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
   }, 10);
   
   scrollToBottom();
-}
-
-function processMessageContent(text, mentions) {
-  let result = escapeHtml(text);
-  
-  if (mentions && mentions.length > 0) {
-    mentions.forEach(mention => {
-      const regex = new RegExp(`@${mention}\\b`, 'g');
-      result = result.replace(regex, `<span class="message-mention">@${mention}</span>`);
-    });
-  }
-  
-  return result;
-}
-
-function escapeHtml(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, char => map[char]);
 }
 
 function addSystemMessage(text) {
