@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>QuickChat</title>
+  <title>QuickChat v2.0</title>
   
   <link rel="icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4ac.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4ac.svg">
@@ -37,6 +37,8 @@
       --warning-color: #dd6b20;
       --checkbox-bg: #edf2f7;
       --checkbox-checked-bg: #3182ce;
+      /* v2.0 提及颜色 */
+      --mention-color: #ffffff;
     }
 
     [data-theme="dark"] {
@@ -64,6 +66,8 @@
       --warning-color: #c05621;
       --checkbox-bg: #4a5568;
       --checkbox-checked-bg: #4299e1;
+      /* v2.0 提及颜色 */
+      --mention-color: #ffffff;
     }
 
     * {
@@ -338,18 +342,19 @@
       border-radius: 3px;
     }
 
-    /* 新增：消息回复样式 */
+    /* 消息回复样式 */
     .message-reply {
       display: flex;
       gap: 10px;
-      font-size: 0.9rem;
-      padding: 8px 12px;
+      font-size: 0.8rem; /* 稍微缩小字体 */
+      padding: 6px 10px; /* 缩小内边距 */
       background: rgba(255, 255, 255, 0.1);
-      border-left: 3px solid var(--accent-primary);
+      border-left: 3px solid var(--accent-secondary); /* 更改颜色以区分边框 */
       border-radius: 4px;
       margin-bottom: 5px;
       cursor: pointer;
       transition: all 0.2s ease;
+      color: inherit; /* 继承父消息的文本颜色 */
     }
 
     .message-reply:hover {
@@ -357,8 +362,9 @@
     }
 
     .message-reply-sender {
-      color: var(--accent-primary);
+      color: var(--mention-color);
       font-weight: 600;
+      /* 修复：在深色主题下，发送者名字在白色消息中会变暗，这里保持高亮 */
     }
 
     .message-reply-content {
@@ -366,17 +372,29 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex-shrink: 1; /* 允许内容缩小 */
+      opacity: 0.9;
     }
 
-    /* 新增：消息操作按钮 */
+    /* 消息操作按钮 */
     .message-actions {
       display: none;
       position: absolute;
-      bottom: 0;
+      top: -32px;
       right: 10px;
       gap: 5px;
-      transform: translateY(25px);
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 4px;
+      padding: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      z-index: 10;
     }
+    
+    [data-theme="dark"] .message-actions {
+        background: rgba(45, 55, 72, 0.95);
+        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.15);
+    }
+
 
     .message:hover .message-actions {
       display: flex;
@@ -400,9 +418,9 @@
       transform: scale(1.05);
     }
 
-    /* 新增：@提及样式 */
+    /* @提及样式 */
     .mention {
-      color: var(--accent-primary);
+      color: var(--mention-color);
       font-weight: 600;
       cursor: pointer;
     }
@@ -411,7 +429,7 @@
       text-decoration: underline;
     }
 
-    /* 新增：@提及列表 */
+    /* @提及列表 */
     .mention-list {
       position: absolute;
       bottom: 45px;
@@ -441,7 +459,7 @@
       font-weight: 600;
     }
 
-    /* 新增：引用提示 */
+    /* 引用提示 */
     .reply-indicator {
       display: flex;
       align-items: center;
@@ -451,6 +469,8 @@
       background: var(--bg-secondary);
       border-left: 3px solid var(--accent-primary);
       border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--text-primary);
     }
 
     .reply-indicator-close {
@@ -462,6 +482,7 @@
       padding: 0;
       width: auto;
       height: auto;
+      font-size: 1.2rem;
     }
 
     .reply-indicator-close:hover {
@@ -1145,13 +1166,11 @@
     <div class="chat-messages" id="chatMessages"></div>
     
     <div class="chat-footer">
-      <!-- 新增：回复提示 -->
       <div id="replyIndicator" class="reply-indicator" style="display: none;">
-        <span>回复给: <strong id="replyToUser"></strong></span>
+        <span>回复：<strong id="replyToContent"></strong></span>
         <button class="reply-indicator-close" onclick="clearReply()">×</button>
       </div>
 
-      <!-- 新增：@提及列表 -->
       <div id="mentionList" class="mention-list" style="display: none;"></div>
 
       <div class="message-input-container">
@@ -1163,7 +1182,7 @@
     </div>
   </div>
   <div class="footer">
-    ©️Copyright Sam Zhang 2025 v1.9 Enhanced
+    ©️Copyright Sam Zhang 2025 v2.0
   </div>
 </div>
 
@@ -1214,27 +1233,31 @@
 </div>
 
 <div class="update-popup" id="updatePopup">
-  <div class="update-header">
-    <div class="update-icon">
-      <i class="fas fa-bullhorn"></i>
+  <div class="modal-overlay"></div>
+  <div class="update-popup-content">
+    <div class="update-header">
+      <div class="update-icon">
+        <i class="fas fa-bullhorn"></i>
+      </div>
+      <div class="update-title">
+        <h3>新版本更新</h3>
+        <p>QuickChat 已更新到 v2.0</p>
+      </div>
     </div>
-    <div class="update-title">
-      <h3>新版本更新</h3>
-      <p>QuickChat 已更新到 v1.9</p>
+    <div class="update-content">
+      <p>感谢您使用 QuickChat！我们在 v2.0 中进行了以下更新：</p>
+      <ul>
+        <li>回复功能优化: 修复了回复引用和指示器显示格式的问题，现在更加简洁易读。</li>
+        <li>房主逻辑改进: 确保房主 ID 在用户列表中被正确初始化和广播。</li>
+        <li>UI/UX 调整: 优化了消息操作按钮的样式和交互。</li>
+      </ul>
     </div>
-  </div>
-  <div class="update-content">
-    <p>感谢您使用 QuickChat！我们进行了以下更新：</p>
-    <ul>
-      <li>新增消息回复功能</li>
-      <li>新增@提及用户功能</li>
-    </ul>
-  </div>
-  <div class="update-actions">
-    <button onclick="hideUpdatePopup(true)">OK</button>
-  </div>
-  <div class="update-version">
-    版本 1.9 Enhanced - 2025年11月16日
+    <div class="update-actions">
+      <button onclick="hideUpdatePopup(true)">OK</button>
+    </div>
+    <div class="update-version">
+      版本 2.0 - 2025年11月16日
+    </div>
   </div>
 </div>
 
@@ -1249,10 +1272,9 @@ let userCount = 1;
 let roomUsers = [];
 let currentTheme = localStorage.getItem('theme') || 'system';
 let isRoomPaused = false;
-let currentAppVersion = '1.9';
+let currentAppVersion = '2.0'; // V2.0版本号更新
 
 let replyToMessage = null;
-let replyToSender = null;
 
 function initNickname() {
   const nicknameInput = document.getElementById('nicknameInput');
@@ -1260,7 +1282,7 @@ function initNickname() {
 }
 
 function checkForUpdates() {
-  const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '1.7';
+  const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '1.7'; // 假设1.7是上一个大版本
   
   if (lastSeenVersion !== currentAppVersion) {
     showUpdatePopup();
@@ -1472,8 +1494,9 @@ function initPeer() {
   document.getElementById('roomInfo').textContent = `房间号: ${roomId}`;
   updateUserCount();
   
+  // V2.0 优化: 初始 user id 设为 null，在 peer.on('open') 中更新
   roomUsers = [{
-    id: isHost ? roomId : null,
+    id: null, 
     username: username,
     isHost: isHost,
     joinTime: new Date().toISOString()
@@ -1483,6 +1506,7 @@ function initPeer() {
     peer = new Peer(roomId);
     
     peer.on('open', (id) => {
+      // V2.0 优化: 确保房主 ID 被正确设置
       roomUsers[0].id = id;
       addSystemMessage('房间创建成功，等待其他用户加入...');
     });
@@ -1494,7 +1518,7 @@ function initPeer() {
     peer = new Peer();
     
     peer.on('open', (id) => {
-      roomUsers[0].id = id;
+      roomUsers[0].id = id; // V2.0 优化: 确保自己 ID 被设置
       
       const conn = peer.connect(roomId, {
         reliable: true,
@@ -1584,6 +1608,7 @@ function handleNewConnection(conn) {
         
         roomUsers.push(newUser);
         
+        // 房主发送当前房间状态和用户列表
         conn.send({
           type: 'auth-result',
           success: true,
@@ -1637,6 +1662,7 @@ function setupConnection(conn) {
         
         if (data.userList) {
           roomUsers = data.userList;
+          // 确保自己的信息也在 userList 中 (对于客户端)
           if (!roomUsers.find(user => user.id === peer.id)) {
             roomUsers.push({
               id: peer.id,
@@ -1679,6 +1705,7 @@ function setupConnection(conn) {
     const index = connections.indexOf(conn);
     if (index > -1) connections.splice(index, 1);
     
+    // V2.0 优化: 确保 conn.userId 存在
     const userIndex = roomUsers.findIndex(user => user.id === conn.userId);
     if (userIndex > -1) {
       const leftUser = roomUsers[userIndex];
@@ -1706,15 +1733,34 @@ function setupConnection(conn) {
 }
 
 function highlightMentions(text) {
-  return text.replace(/@(\S+)/g, '<span class="mention">@$1</span>');
+  // 匹配 @昵称，但不匹配 @ 后面紧跟空格的情况
+  return text.replace(/@(\S+)/g, (match, p1) => {
+    // 检查 p1 (昵称部分) 是否只包含非空字符
+    if (p1.trim() === p1) {
+      return `<span class="mention">@${p1}</span>`;
+    }
+    return match; // 不进行替换
+  });
 }
 
+/**
+ * 设置回复对象并显示回复提示
+ * @param {string} sender 被回复消息的发送者
+ * @param {string} content 被回复消息的内容
+ * @param {number} messageId 被回复消息的唯一ID
+ */
 function setReplyTo(sender, content, messageId) {
   replyToMessage = { sender, content, messageId };
-  replyToSender = sender;
   
   const indicator = document.getElementById('replyIndicator');
-  document.getElementById('replyToUser').textContent = sender;
+  const replyToContentSpan = document.getElementById('replyToContent');
+  
+  // 截取内容，显示格式: [发送者]: [被回复内容...]
+  const displayContent = content.length > 30 ? content.substring(0, 30) + '...' : content;
+  
+  // V2.0 优化: 更改回复指示器的显示内容
+  replyToContentSpan.innerHTML = `${sender}: ${displayContent}`;
+  
   indicator.style.display = 'flex';
   
   document.getElementById('messageInput').focus();
@@ -1722,14 +1768,14 @@ function setReplyTo(sender, content, messageId) {
 
 function clearReply() {
   replyToMessage = null;
-  replyToSender = null;
   document.getElementById('replyIndicator').style.display = 'none';
+  document.getElementById('replyToContent').textContent = ''; // 清空提示内容
 }
 
 function showMentionList(searchText) {
   const mentionList = document.getElementById('mentionList');
   const filteredUsers = roomUsers.filter(user => 
-    user.username.toLowerCase().includes(searchText.toLowerCase())
+    user.username && user.username.toLowerCase().includes(searchText.toLowerCase())
   );
   
   if (filteredUsers.length === 0 || searchText.length === 0) {
@@ -1769,10 +1815,13 @@ function sendMessage() {
   
   if (content) {
     const messageId = Date.now() + Math.random();
-    addMessage(username, content, 'sent', isHost, replyToMessage, messageId);
+    // 检查是否有回复对象，replyToMessage在发送后会清空
+    const currentReplyTo = replyToMessage;
+    
+    addMessage(username, content, 'sent', isHost, currentReplyTo, messageId);
     
     if (isHost) {
-      broadcastMessage(username, content, null, replyToMessage, messageId);
+      broadcastMessage(username, content, null, currentReplyTo, messageId);
     } else {
       connections.forEach(conn => {
         if (conn.open) {
@@ -1781,7 +1830,7 @@ function sendMessage() {
             sender: username,
             content: content,
             isHost: false,
-            replyTo: replyToMessage,
+            replyTo: currentReplyTo,
             messageId: messageId
           });
         }
@@ -1888,16 +1937,21 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
       const originalMsg = document.querySelector(`[data-message-id="${replyTo.messageId}"]`);
       if (originalMsg) {
         originalMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        originalMsg.style.animation = 'none';
+        // 增加一个短暂的动画/高亮效果来指示被引用的消息
+        originalMsg.style.transform = 'scale(1.05)';
+        originalMsg.style.transition = 'transform 0.2s ease-in-out';
         setTimeout(() => {
-          originalMsg.style.animation = 'messageFadeIn 0.4s forwards';
-        }, 10);
+          originalMsg.style.transform = 'scale(1)';
+        }, 300);
       }
     };
     
+    // V2.0 优化: 消息气泡内部的回复引用格式
+    const displayContent = replyTo.content.length > 20 ? replyTo.content.substring(0, 20) + '...' : replyTo.content;
+    
     replyDiv.innerHTML = `
-      <span class="message-reply-sender">↳ ${replyTo.sender}</span>
-      <span class="message-reply-content">${replyTo.content}</span>
+      <span class="message-reply-sender">${replyTo.sender}：</span>
+      <span class="message-reply-content">${displayContent}</span>
     `;
     
     msgDiv.appendChild(replyDiv);
@@ -1923,36 +1977,57 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
   const actionsDiv = document.createElement('div');
   actionsDiv.classList.add('message-actions');
   
-  const replyBtn = document.createElement('button');
-  replyBtn.classList.add('message-action-btn');
-  replyBtn.textContent = '回复';
-  replyBtn.onclick = (e) => {
-    e.stopPropagation();
-    setReplyTo(sender, text, messageId);
-  };
-  actionsDiv.appendChild(replyBtn);
-  
-  const mentionBtn = document.createElement('button');
-  mentionBtn.classList.add('message-action-btn');
-  mentionBtn.textContent = '@';
-  mentionBtn.onclick = (e) => {
-    e.stopPropagation();
-    const input = document.getElementById('messageInput');
-    const currentText = input.value;
-    const cursorPos = input.selectionStart;
+  // 仅在消息类型不是系统消息时添加操作按钮
+  if (type !== 'system') {
+    const replyBtn = document.createElement('button');
+    replyBtn.classList.add('message-action-btn');
+    replyBtn.textContent = '回复';
+    replyBtn.onclick = (e) => {
+      e.stopPropagation();
+      setReplyTo(sender, text, messageId);
+    };
+    actionsDiv.appendChild(replyBtn);
     
-    const beforeText = currentText.substring(0, cursorPos);
-    const afterText = currentText.substring(cursorPos);
-    const newText = beforeText + '@' + sender + ' ' + afterText;
+    const mentionBtn = document.createElement('button');
+    mentionBtn.classList.add('message-action-btn');
+    mentionBtn.textContent = '@';
+    mentionBtn.onclick = (e) => {
+      e.stopPropagation();
+      const input = document.getElementById('messageInput');
+      
+      // 检查输入框末尾是否有空格，如果没有则加一个
+      let currentText = input.value;
+      if (currentText.length > 0 && currentText.charAt(currentText.length - 1) !== ' ') {
+        currentText += ' ';
+      }
+      
+      const newText = currentText + '@' + sender + ' ';
+      
+      input.value = newText;
+      // 修复光标位置，让光标位于@昵称 后面
+      input.selectionStart = input.selectionEnd = newText.length; 
+      
+      input.focus();
+      document.getElementById('mentionList').style.display = 'none';
+    };
+    actionsDiv.appendChild(mentionBtn);
     
-    input.value = newText;
-    input.selectionStart = input.selectionEnd = cursorPos + sender.length + 2;
-    input.focus();
-    document.getElementById('mentionList').style.display = 'none';
-  };
-  actionsDiv.appendChild(mentionBtn);
-  
-  msgDiv.appendChild(actionsDiv);
+    msgDiv.appendChild(actionsDiv);
+    
+    // 添加鼠标事件来显示/隐藏操作按钮
+    msgDiv.addEventListener('mouseenter', function() {
+      actionsDiv.style.display = 'flex';
+    });
+    
+    msgDiv.addEventListener('mouseleave', function() {
+      // 只有在鼠标离开整个消息气泡时才隐藏
+      // 修复：如果鼠标停留在 action button 上，不应隐藏
+      if (actionsDiv.contains(document.activeElement)) {
+        return; 
+      }
+      actionsDiv.style.display = 'none';
+    });
+  }
   
   document.getElementById('chatMessages').appendChild(msgDiv);
   
@@ -2009,13 +2084,14 @@ function showUserList() {
     const userItem = document.createElement('li');
     userItem.className = 'user-item';
     
-    const avatarChar = user.username.charAt(0).toUpperCase();
+    // 确保 user.username 不为空
+    const avatarChar = user.username ? user.username.charAt(0).toUpperCase() : '?';
     
     userItem.innerHTML = `
       <div class="user-avatar">${avatarChar}</div>
       <div class="user-info">
         <div class="user-name">
-          ${user.username}
+          ${user.username || '未知用户'}
           ${user.isHost ? '<span class="host-badge">房主</span>' : ''}
         </div>
         <div class="user-status">${user.id === peer.id ? '(我)' : ''}</div>
