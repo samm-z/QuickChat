@@ -2,7 +2,6 @@
 <html lang="zh" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <!-- 修改viewport设置，添加maximum-scale和user-scalable=no以防止自动缩放 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>QuickChat</title>
   
@@ -39,6 +38,10 @@
       --warning-color: #dd6b20;
       --checkbox-bg: #edf2f7;
       --checkbox-checked-bg: #3182ce;
+      --mention-bg: #fef5e7;
+      --mention-text: #d68910;
+      --reply-bg: #e6f3ff;
+      --reply-text: #0066cc;
     }
 
     [data-theme="dark"] {
@@ -67,13 +70,17 @@
       --warning-color: #c05621;
       --checkbox-bg: #4a5568;
       --checkbox-checked-bg: #4299e1;
+      --mention-bg: #2c3e2d;
+      --mention-text: #f9e79f;
+      --reply-bg: #1a3a52;
+      --reply-text: #5dade2;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      -webkit-text-size-adjust: 100%; /* 防止iOS设备上的文本自动调整大小 */
+      -webkit-text-size-adjust: 100%;
     }
 
     body {
@@ -85,7 +92,7 @@
       align-items: center;
       color: var(--text-primary);
       transition: background-color 0.3s ease;
-      touch-action: manipulation; /* 改善移动端触摸体验 */
+      touch-action: manipulation;
     }
 
     .container {
@@ -184,7 +191,6 @@
       animation: fadeScale 0.5s forwards cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    /* Fixed layout for chat interface */
     .chat.active {
       display: flex;
       flex-direction: column;
@@ -208,11 +214,9 @@
       gap: 5px;
       cursor: pointer;
       transition: background-color 0.3s ease, transform 0.2s ease;
-      
-      /* 调整位置 */
       position: relative;
-      left: 0px;  /* 向左移动 */
-      top: 30px;    /* 向上移动 */
+      left: 0px;
+      top: 30px;
     }
 
     .user-count:hover {
@@ -248,7 +252,7 @@
       padding: 10px 16px;
       border: none;
       border-radius: 8px;
-      font-size: 16px; /* 保持16px或更大以防止iOS缩放 */
+      font-size: 16px;
       font-family: inherit;
       transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }
@@ -258,7 +262,7 @@
       color: var(--text-primary);
       outline: none;
       border: 1px solid var(--border-color);
-      -webkit-appearance: none; /* 移除iOS默认样式 */
+      -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
     }
@@ -290,7 +294,6 @@
       transform: translateY(0);
     }
 
-    /* 保存按钮动画 */
     .save-success {
       background-color: var(--success-color) !important;
     }
@@ -328,7 +331,7 @@
       scroll-behavior: smooth;
       transition: background-color 0.3s ease, border-color 0.3s ease;
       min-height: 0;
-      -webkit-overflow-scrolling: touch; /* 改善iOS滚动体验 */
+      -webkit-overflow-scrolling: touch;
     }
 
     .chat-messages::-webkit-scrollbar {
@@ -345,11 +348,119 @@
       border-radius: 3px;
     }
 
+    /* Message input with reply preview */
+    .message-input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .reply-preview {
+      display: none;
+      background: var(--reply-bg);
+      border-left: 3px solid var(--reply-text);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: var(--reply-text);
+      position: relative;
+      animation: slideDown 0.3s ease;
+    }
+
+    .reply-preview.active {
+      display: block;
+    }
+
+    .reply-preview-header {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .reply-preview-content {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.9;
+    }
+
+    .reply-preview-close {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--reply-text);
+      cursor: pointer;
+      font-size: 1rem;
+      width: auto;
+      padding: 4px;
+    }
+
+    .reply-preview-close:hover {
+      opacity: 0.7;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Mention dropdown menu */
+    .mention-dropdown {
+      display: none;
+      position: absolute;
+      bottom: 50px;
+      left: 15px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 -4px 12px var(--shadow-color);
+      max-width: 200px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .mention-dropdown.active {
+      display: block;
+      animation: slideUp 0.2s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .mention-item {
+      padding: 10px 15px;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: background-color 0.2s ease;
+    }
+
+    .mention-item:hover {
+      background-color: var(--mention-bg);
+    }
+
     /* 消息输入区域样式 */
     .message-input-container {
       display: flex;
       gap: 10px;
       margin: 8px 0;
+      position: relative;
     }
 
     .message-input-container input {
@@ -392,6 +503,39 @@
       border-radius: 10px;
       margin-left: 5px;
       vertical-align: middle;
+    }
+
+    /* Reply box in message */
+    .message-reply-box {
+      background: var(--reply-bg);
+      border-left: 2px solid var(--reply-text);
+      padding: 8px 10px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+
+    .message-reply-box .reply-label {
+      font-weight: 600;
+      color: var(--reply-text);
+    }
+
+    .message-reply-box .reply-content {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    /* Message mention highlight */
+    .message .mention {
+      background: var(--mention-bg);
+      color: var(--mention-text);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     /* 消息动画 */
@@ -562,7 +706,7 @@
     .footer {
       color: var(--footer-text);
       font-size: 0.8rem;
-      margin-top: 1.25rem; /* 20px 相当于 1.25rem */
+      margin-top: 1.25rem;
       text-align: center;
       transition: color 0.3s ease;
     }
@@ -578,7 +722,7 @@
       }
       
       input, button {
-        font-size: 16px; /* 保持16px以防止iOS缩放 */
+        font-size: 16px;
         padding: 10px 14px;
       }
       
@@ -998,6 +1142,39 @@
       text-align: center;
       margin-top: 15px;
     }
+
+    /* Message action buttons */
+    .message-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .message:hover .message-actions {
+      opacity: 1;
+    }
+
+    .message-action-btn {
+      background: none;
+      border: 1px solid currentColor;
+      color: inherit;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      width: auto;
+      transition: all 0.2s ease;
+      opacity: 0.7;
+    }
+
+    .message-action-btn:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.1);
+      transform: none;
+      box-shadow: none;
+    }
   </style>
 </head>
 <body>
@@ -1032,7 +1209,7 @@
     <!-- Fixed header -->
     <div class="chat-header">
       <h2><i class="fas fa-users"></i> <span id="roomInfo">房间号: </span></h2>
-      <!-- User count button (moved inside chat-header) -->
+      <!-- User count button -->
       <div class="user-count" onclick="showUserList()">
         <i class="fas fa-user"></i> <span id="userCount">1</span>
       </div>
@@ -1043,9 +1220,24 @@
     
     <!-- Fixed footer with input and buttons -->
     <div class="chat-footer">
-      <div class="message-input-container">
-        <input type="text" id="messageInput" placeholder="输入消息...">
-        <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+      <!-- <CHANGE> Added message input wrapper with reply preview -->
+      <div class="message-input-wrapper">
+        <!-- Reply preview -->
+        <div class="reply-preview" id="replyPreview">
+          <div class="reply-preview-header"><i class="fas fa-reply"></i> 回复给 <span id="replyUsername"></span></div>
+          <div class="reply-preview-content" id="replyContent"></div>
+          <button class="reply-preview-close" onclick="clearReply()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Message input with mention dropdown -->
+        <div class="message-input-container">
+          <div style="flex: 1; position: relative;">
+            <input type="text" id="messageInput" placeholder="输入消息...">
+            <!-- <CHANGE> Added mention dropdown menu -->
+            <div class="mention-dropdown" id="mentionDropdown"></div>
+          </div>
+          <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
       </div>
       
       <button onclick="leaveRoom()" class="exit-button"><i class="fas fa-sign-out-alt"></i> 退出房间</button>
@@ -1053,7 +1245,7 @@
   </div>
   <!-- 页脚 -->
   <div class="footer">
-    ©️Copyright Sam Zhang 2025 v1.9
+    ©️Copyright Sam Zhang 2025 v2.0
   </div>
 </div>
 
@@ -1117,20 +1309,22 @@
     </div>
     <div class="update-title">
       <h3>新版本更新</h3>
-      <p>QuickChat 已更新到 v1.9</p>
+      <p>QuickChat 已更新到 v2.0</p>
     </div>
   </div>
   <div class="update-content">
     <p>感谢您使用 QuickChat！我们进行了以下更新：</p>
     <ul>
-      <li>修复了创建房间密码勾选框的bug</li>
+      <li>✨ 新增 @提及功能 - 轻松@其他用户</li>
+      <li>💬 新增 回复功能 - 对特定消息进行回复</li>
+      <li>🎯 消息操作按钮 - 鼠标悬停消息时显示操作选项</li>
     </ul>
   </div>
   <div class="update-actions">
     <button onclick="hideUpdatePopup(true)">OK</button>
   </div>
   <div class="update-version">
-    版本 1.9 - 2025年5月10日
+    版本 2.0 - 2025年11月16日
   </div>
 </div>
 
@@ -1142,10 +1336,13 @@ let isHost = false;
 let roomPassword = null;
 let username = localStorage.getItem('nickname') || "用户" + Math.floor(Math.random() * 1000);
 let userCount = 1;
-let roomUsers = []; // 存储房间内的用户信息
+let roomUsers = [];
 let currentTheme = localStorage.getItem('theme') || 'system';
-let isRoomPaused = false; // 房间是否暂停状态
-let currentAppVersion = '1.8'; // 当前应用版本
+let isRoomPaused = false;
+let currentAppVersion = '2.0'; // <CHANGE> Updated version to 2.0
+
+// <CHANGE> Reply feature variables
+let replyingToMessage = null;
 
 // 初始化昵称
 function initNickname() {
@@ -1157,7 +1354,6 @@ function initNickname() {
 function checkForUpdates() {
   const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '1.7';
   
-  // 如果存储的版本与当前版本不同，显示更新弹窗
   if (lastSeenVersion !== currentAppVersion) {
     showUpdatePopup();
   }
@@ -1180,7 +1376,6 @@ function hideUpdatePopup(dontShowAgain) {
     updatePopup.style.display = 'none';
   }, 400);
   
-  // 如果用户点击了"了解了"，记录当前版本到本地存储
   if (dontShowAgain) {
     localStorage.setItem('lastSeenVersion', currentAppVersion);
   }
@@ -1191,11 +1386,9 @@ function saveNickname() {
   const newNickname = document.getElementById('nicknameInput').value.trim();
   
   if (newNickname) {
-    // 添加保存成功动画
     saveBtn.classList.add('save-success');
     saveBtn.innerHTML = '<i class="fas fa-check"></i> 已保存';
     
-    // 恢复按钮状态
     setTimeout(() => {
       saveBtn.classList.remove('save-success');
       saveBtn.innerHTML = '<i class="fas fa-check"></i> 保存';
@@ -1205,12 +1398,10 @@ function saveNickname() {
     localStorage.setItem('nickname', username);
     addSystemMessage(`昵称已更新为: ${username}`);
     
-    // 如果已经在房间中，广播昵称更新
     if (connections.length > 0) {
       broadcastUserInfo();
     }
   } else {
-    // 如果昵称为空，添加抖动效果
     saveBtn.classList.add('shake');
     setTimeout(() => {
       saveBtn.classList.remove('shake');
@@ -1222,11 +1413,9 @@ function saveNickname() {
 function setTheme(theme) {
   currentTheme = theme;
   
-  // 更新主题图标
   const themeIcon = document.getElementById('themeIcon');
   
   if (theme === 'system') {
-    // 如果选择了系统主题，检测系统偏好
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
     themeIcon.className = 'fas fa-desktop';
@@ -1242,7 +1431,6 @@ function setTheme(theme) {
 }
 
 function cycleTheme() {
-  // 循环切换主题：light -> dark -> system -> light
   if (currentTheme === 'light') {
     setTheme('dark');
   } else if (currentTheme === 'dark') {
@@ -1255,7 +1443,6 @@ function cycleTheme() {
 function initTheme() {
   setTheme(currentTheme);
   
-  // 监听系统主题变化
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     if (currentTheme === 'system') {
       document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
@@ -1265,7 +1452,6 @@ function initTheme() {
 
 initTheme();
 initNickname();
-// 页面加载完成后检查更新
 document.addEventListener('DOMContentLoaded', checkForUpdates);
 
 // 房间管理
@@ -1384,9 +1570,8 @@ function initPeer() {
   document.getElementById('roomInfo').textContent = `房间号: ${roomId}`;
   updateUserCount();
   
-  // 初始化房间用户列表
   roomUsers = [{
-    id: isHost ? roomId : null, // 房主ID是房间ID，客户端初始化时ID未知
+    id: isHost ? roomId : null,
     username: username,
     isHost: isHost,
     joinTime: new Date().toISOString()
@@ -1396,7 +1581,6 @@ function initPeer() {
     peer = new Peer(roomId);
     
     peer.on('open', (id) => {
-      // 更新自己的ID
       roomUsers[0].id = id;
       addSystemMessage('房间创建成功，等待其他用户加入...');
     });
@@ -1408,7 +1592,6 @@ function initPeer() {
     peer = new Peer();
     
     peer.on('open', (id) => {
-      // 更新自己的ID
       roomUsers[0].id = id;
       
       const conn = peer.connect(roomId, {
@@ -1445,8 +1628,13 @@ function initPeer() {
     }
   });
   
+  // <CHANGE> Added @ mention input handling
   document.getElementById('messageInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') sendMessage();
+  });
+
+  document.getElementById('messageInput').addEventListener('input', function(e) {
+    handleMentionInput(e.target.value);
   });
   
   document.getElementById('joinRoomInput').addEventListener('keypress', function(e) {
@@ -1456,6 +1644,58 @@ function initPeer() {
   document.getElementById('joinRoomPassword').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') joinRoom();
   });
+}
+
+// <CHANGE> Mention input handling
+function handleMentionInput(text) {
+  const lastAtSign = text.lastIndexOf('@');
+  const mentionDropdown = document.getElementById('mentionDropdown');
+
+  if (lastAtSign === -1) {
+    mentionDropdown.classList.remove('active');
+    return;
+  }
+
+  const searchText = text.substring(lastAtSign + 1).toLowerCase();
+  
+  if (searchText.length === 0) {
+    mentionDropdown.classList.remove('active');
+    return;
+  }
+
+  // Filter users by search text
+  const matchingUsers = roomUsers.filter(user => 
+    user.username.toLowerCase().includes(searchText)
+  );
+
+  if (matchingUsers.length === 0) {
+    mentionDropdown.classList.remove('active');
+    return;
+  }
+
+  // Render mention dropdown
+  mentionDropdown.innerHTML = '';
+  matchingUsers.forEach(user => {
+    const item = document.createElement('div');
+    item.className = 'mention-item';
+    item.textContent = user.username;
+    item.onclick = () => insertMention(user.username, lastAtSign);
+    mentionDropdown.appendChild(item);
+  });
+
+  mentionDropdown.classList.add('active');
+}
+
+// <CHANGE> Insert mention into input
+function insertMention(username, atSignIndex) {
+  const input = document.getElementById('messageInput');
+  const beforeAt = input.value.substring(0, atSignIndex);
+  const afterMention = input.value.substring(input.value.length);
+  
+  input.value = beforeAt + '@' + username + ' ' + afterMention;
+  
+  document.getElementById('mentionDropdown').classList.remove('active');
+  input.focus();
 }
 
 function handleNewConnection(conn) {
@@ -1472,7 +1712,6 @@ function handleNewConnection(conn) {
           return;
         }
         
-        // 添加新用户到房间用户列表
         const newUser = {
           id: data.userId,
           username: data.username,
@@ -1483,7 +1722,6 @@ function handleNewConnection(conn) {
         
         roomUsers.push(newUser);
         
-        // 发送认证成功和当前房间用户列表
         conn.send({
           type: 'auth-result',
           success: true,
@@ -1518,16 +1756,15 @@ function handleNewConnection(conn) {
 function setupConnection(conn) {
   conn.on('data', (data) => {
     if (data.type === 'message') {
-      // 如果房间被暂停且不是房主发送的消息，则不处理
       if (isRoomPaused && !data.isHost && isHost) {
         return;
       }
       
-      addMessage(data.sender, data.content, 'received', data.isHost);
+      // <CHANGE> Added support for reply and mentions in message
+      addMessage(data.sender, data.content, 'received', data.isHost, data.mentions, data.replyTo);
       
-      // 只有房主需要转发消息，且不转发给自己
       if (isHost && data.sender !== username) {
-        broadcastMessage(data.sender, data.content, conn);
+        broadcastMessage(data.sender, data.content, conn, data.mentions, data.replyTo);
       }
     } else if (data.type === 'system') {
       addSystemMessage(data.content);
@@ -1537,10 +1774,8 @@ function setupConnection(conn) {
         userCount = data.connectedUsers;
         updateUserCount();
         
-        // 更新房间用户列表
         if (data.userList) {
           roomUsers = data.userList;
-          // 添加自己到用户列表
           if (!roomUsers.find(user => user.id === peer.id)) {
             roomUsers.push({
               id: peer.id,
@@ -1551,7 +1786,6 @@ function setupConnection(conn) {
           }
         }
         
-        // 设置房间暂停状态
         if (data.isRoomPaused) {
           setRoomPaused(true);
         }
@@ -1565,7 +1799,6 @@ function setupConnection(conn) {
     } else if (data.type === 'user-list') {
       roomUsers = data.userList;
     } else if (data.type === 'user-info-update') {
-      // 更新用户信息
       const userIndex = roomUsers.findIndex(user => user.id === data.userId);
       if (userIndex !== -1) {
         roomUsers[userIndex].username = data.username;
@@ -1585,7 +1818,6 @@ function setupConnection(conn) {
     const index = connections.indexOf(conn);
     if (index > -1) connections.splice(index, 1);
     
-    // 从房间用户列表中移除用户
     const userIndex = roomUsers.findIndex(user => user.id === conn.userId);
     if (userIndex > -1) {
       const leftUser = roomUsers[userIndex];
@@ -1612,8 +1844,26 @@ function setupConnection(conn) {
   });
 }
 
+// <CHANGE> Extract mentions from text
+function extractMentions(text) {
+  const mentionRegex = /@([^\s@]+)/g;
+  const mentions = [];
+  let match;
+  
+  while ((match = mentionRegex.exec(text)) !== null) {
+    mentions.push(match[1]);
+  }
+  
+  return mentions;
+}
+
+// <CHANGE> Clear reply
+function clearReply() {
+  replyingToMessage = null;
+  document.getElementById('replyPreview').classList.remove('active');
+}
+
 function sendMessage() {
-  // 如果房间被暂停且不是房主，则不能发送消息
   if (isRoomPaused && !isHost) {
     addSystemMessage('房间已被暂停，暂时无法发送消息');
     return;
@@ -1623,20 +1873,23 @@ function sendMessage() {
   const content = input.value.trim();
   
   if (content) {
-    addMessage(username, content, 'sent', isHost);
+    // <CHANGE> Extract mentions and include reply info
+    const mentions = extractMentions(content);
+    
+    addMessage(username, content, 'sent', isHost, mentions, replyingToMessage);
     
     if (isHost) {
-      // 房主直接广播给所有客户端
-      broadcastMessage(username, content);
+      broadcastMessage(username, content, null, mentions, replyingToMessage);
     } else {
-      // 客户端只发送给房主
       connections.forEach(conn => {
         if (conn.open) {
           conn.send({
             type: 'message',
             sender: username,
             content: content,
-            isHost: false
+            isHost: false,
+            mentions: mentions,
+            replyTo: replyingToMessage
           });
         }
       });
@@ -1644,17 +1897,20 @@ function sendMessage() {
     
     input.value = '';
     input.focus();
+    clearReply();
   }
 }
 
-function broadcastMessage(sender, content, exclude = null) {
+function broadcastMessage(sender, content, exclude = null, mentions = [], replyTo = null) {
   connections.forEach(conn => {
     if (conn.open && conn !== exclude) {
       conn.send({
         type: 'message',
         sender: sender,
         content: content,
-        isHost: isHost
+        isHost: isHost,
+        mentions: mentions,
+        replyTo: replyTo
       });
     }
   });
@@ -1683,7 +1939,6 @@ function broadcastUserCount() {
 }
 
 function broadcastUserList() {
-  // 只发送必要的用户信息，不包括连接对象
   const userListToSend = roomUsers.map(user => ({
     id: user.id,
     username: user.username,
@@ -1702,7 +1957,6 @@ function broadcastUserList() {
 }
 
 function broadcastUserInfo() {
-  // 广播自己的用户信息更新
   connections.forEach(conn => {
     if (conn.open) {
       conn.send({
@@ -1719,15 +1973,16 @@ function updateUserCount() {
   document.getElementById('userCount').textContent = count;
 }
 
-function addMessage(sender, text, type, isHostMessage = false) {
+// <CHANGE> Enhanced message display with replies and mentions
+function addMessage(sender, text, type, isHostMessage = false, mentions = [], replyTo = null) {
   const msgDiv = document.createElement('div');
   msgDiv.classList.add('message', type);
+  msgDiv.style.cursor = 'context-menu';
   
   const senderSpan = document.createElement('span');
   senderSpan.classList.add('sender');
   senderSpan.textContent = sender;
   
-  // 如果是房主消息，添加房主标志
   if (isHostMessage) {
     const hostBadge = document.createElement('span');
     hostBadge.classList.add('host-badge');
@@ -1736,10 +1991,36 @@ function addMessage(sender, text, type, isHostMessage = false) {
   }
   
   msgDiv.appendChild(senderSpan);
+
+  // <CHANGE> Add reply preview in message
+  if (replyTo) {
+    const replyBox = document.createElement('div');
+    replyBox.className = 'message-reply-box';
+    replyBox.innerHTML = `<span class="reply-label"><i class="fas fa-reply"></i> 回复给 ${replyTo.sender}</span><div class="reply-content">${replyTo.content}</div>`;
+    msgDiv.appendChild(replyBox);
+  }
   
   const contentSpan = document.createElement('span');
-  contentSpan.textContent = text;
+  
+  // <CHANGE> Highlight mentions in content
+  if (mentions && mentions.length > 0) {
+    let highlightedText = text;
+    mentions.forEach(mention => {
+      const mentionRegex = new RegExp(`@${mention}\\b`, 'g');
+      highlightedText = highlightedText.replace(mentionRegex, `<span class="mention">@${mention}</span>`);
+    });
+    contentSpan.innerHTML = highlightedText;
+  } else {
+    contentSpan.textContent = text;
+  }
+  
   msgDiv.appendChild(contentSpan);
+
+  // <CHANGE> Add action buttons for reply
+  const actionButtons = document.createElement('div');
+  actionButtons.className = 'message-actions';
+  actionButtons.innerHTML = `<button class="message-action-btn" onclick="setReply('${sender}', '${text.replace(/'/g, "\\'")}')"><i class="fas fa-reply"></i> 回复</button>`;
+  msgDiv.appendChild(actionButtons);
   
   document.getElementById('chatMessages').appendChild(msgDiv);
   
@@ -1748,6 +2029,21 @@ function addMessage(sender, text, type, isHostMessage = false) {
   }, 10);
   
   scrollToBottom();
+}
+
+// <CHANGE> Set reply message
+function setReply(sender, content) {
+  replyingToMessage = {
+    sender: sender,
+    content: content.substring(0, 50) + (content.length > 50 ? '...' : '')
+  };
+  
+  const replyPreview = document.getElementById('replyPreview');
+  document.getElementById('replyUsername').textContent = sender;
+  document.getElementById('replyContent').textContent = replyingToMessage.content;
+  replyPreview.classList.add('active');
+  
+  document.getElementById('messageInput').focus();
 }
 
 function addSystemMessage(text) {
@@ -1785,22 +2081,18 @@ function showUserList() {
   const userListContainer = document.getElementById('userListContainer');
   const hostControls = document.getElementById('hostControls');
   
-  // 清空现有列表
   userListContainer.innerHTML = '';
   
-  // 按照加入时间排序，房主始终在最前面
   const sortedUsers = [...roomUsers].sort((a, b) => {
     if (a.isHost) return -1;
     if (b.isHost) return 1;
     return new Date(a.joinTime) - new Date(b.joinTime);
   });
   
-  // 生成用户列表
   sortedUsers.forEach(user => {
     const userItem = document.createElement('li');
     userItem.className = 'user-item';
     
-    // 获取用户名首字母或第一个字符作为头像
     const avatarChar = user.username.charAt(0).toUpperCase();
     
     userItem.innerHTML = `
@@ -1817,11 +2109,9 @@ function showUserList() {
     userListContainer.appendChild(userItem);
   });
   
-  // 如果是房主，显示房主控制区域
   if (isHost) {
     hostControls.classList.add('active');
     
-    // 更新暂停按钮文本
     const pauseBtn = document.getElementById('pauseRoomBtn');
     if (isRoomPaused) {
       pauseBtn.innerHTML = '<i class="fas fa-play"></i> 恢复房间';
@@ -1832,7 +2122,6 @@ function showUserList() {
     hostControls.classList.remove('active');
   }
   
-  // 显示模态框
   modal.classList.add('active');
 }
 
@@ -1841,7 +2130,6 @@ function hideUserList() {
   modal.classList.remove('active');
 }
 
-// 点击模态框外部关闭
 document.getElementById('userListModal').addEventListener('click', function(e) {
   if (e.target === this) {
     hideUserList();
@@ -1854,7 +2142,6 @@ function togglePauseRoom() {
   
   isRoomPaused = !isRoomPaused;
   
-  // 广播房间暂停状态
   connections.forEach(conn => {
     if (conn.open) {
       conn.send({
@@ -1865,10 +2152,8 @@ function togglePauseRoom() {
     }
   });
   
-  // 更新UI
   setRoomPaused(isRoomPaused);
   
-  // 更新按钮文本
   const pauseBtn = document.getElementById('pauseRoomBtn');
   if (isRoomPaused) {
     pauseBtn.innerHTML = '<i class="fas fa-play"></i> 恢复房间';
@@ -1878,7 +2163,6 @@ function togglePauseRoom() {
     addSystemMessage('你已恢复房间');
   }
   
-  // 关闭用户列表模态框
   hideUserList();
 }
 
@@ -1889,12 +2173,10 @@ function setRoomPaused(paused) {
   const sendButton = messageInput.nextElementSibling;
   
   if (paused && !isHost) {
-    // 非房主在房间暂停时不能发送消息
     messageInput.disabled = true;
     sendButton.disabled = true;
     chatMessages.classList.add('room-paused');
   } else {
-    // 房主或房间未暂停时可以发送消息
     messageInput.disabled = false;
     sendButton.disabled = false;
     chatMessages.classList.remove('room-paused');
@@ -1905,7 +2187,6 @@ function deleteRoom() {
   if (!isHost) return;
   
   if (confirm('确定要删除房间吗？所有用户将被断开连接。')) {
-    // 广播房间删除消息
     connections.forEach(conn => {
       if (conn.open) {
         conn.send({
@@ -1920,27 +2201,30 @@ function deleteRoom() {
   }
 }
 
-// 添加防止iOS缩放的事件处理
 document.addEventListener('gesturestart', function(e) {
   e.preventDefault();
 });
 
-// 防止双击缩放
 document.addEventListener('dblclick', function(e) {
   e.preventDefault();
 });
 
-// 修复iOS输入框焦点问题
 const allInputs = document.querySelectorAll('input');
 allInputs.forEach(input => {
   input.addEventListener('focus', function() {
-    // 防止输入框获取焦点时页面缩放
     document.body.classList.add('input-focused');
   });
   
   input.addEventListener('blur', function() {
     document.body.classList.remove('input-focused');
   });
+});
+
+// <CHANGE> Close mention dropdown when clicking elsewhere
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#messageInput') && !e.target.closest('.mention-dropdown')) {
+    document.getElementById('mentionDropdown').classList.remove('active');
+  }
 });
 </script>
 
