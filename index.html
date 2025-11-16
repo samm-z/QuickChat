@@ -14,8 +14,7 @@
   <style>
     :root {
       --bg-primary: #f0f4f8;
-      /* <CHANGE> 优化对比度: 将聊天背景设为更浅的颜色，以区分收到的消息气泡 */
-      --bg-secondary: #f7fbfc; 
+      --bg-secondary: #e2e8f0;
       --card-bg: #ffffff;
       --text-primary: #2d3748;
       --text-secondary: #4a5568;
@@ -24,8 +23,7 @@
       --border-color: #e2e8f0;
       --sent-bg: #3182ce;
       --sent-text: #ffffff;
-      /* 保持收到的消息气泡颜色，现在它与新的 --bg-secondary 有了对比 */
-      --received-bg: #e2e8f0; 
+      --received-bg: #e2e8f0;
       --received-text: #2d3748;
       --system-bg: #edf2f7;
       --system-text: #718096;
@@ -41,6 +39,10 @@
       --checkbox-checked-bg: #3182ce;
       /* <CHANGE> 新增：白色用于@提及文字 */
       --mention-color: #ffffff;
+      
+      /* <FIX> 新增：回复引用块的背景色和文字颜色 (浅色模式) */
+      --reply-bg: rgba(255, 255, 255, 0.2); 
+      --reply-text: #ffffff;
     }
 
     [data-theme="dark"] {
@@ -70,6 +72,10 @@
       --checkbox-checked-bg: #4299e1;
       /* <CHANGE> 白色用于@提及文字 */
       --mention-color: #ffffff;
+
+      /* <FIX> 新增：回复引用块的背景色和文字颜色 (暗色模式) */
+      --reply-bg: rgba(255, 255, 255, 0.15);
+      --reply-text: #ffffff;
     }
 
     * {
@@ -350,36 +356,41 @@
       gap: 10px;
       font-size: 0.9rem;
       padding: 8px 12px;
-      /* 使用透明度来实现浅色主题下的背景对比 */
-      background: var(--bg-primary); 
+      /* <FIX> 使用新的回复背景色变量 */
+      background: var(--reply-bg); 
       border-left: 3px solid var(--accent-primary);
       border-radius: 4px;
       margin-bottom: 5px;
       cursor: pointer;
       transition: all 0.2s ease;
-    }
-    
-    /* 修正：在收到的消息气泡中，回复引用文字应使用深色 */
-    .received .message-reply-sender,
-    .received .message-reply-content {
-        color: var(--received-text);
+      /* <FIX> 设置回复文本的颜色为白色，确保在蓝色背景上有高对比度 */
+      color: var(--reply-text); 
     }
 
-    /* 修正：在发送的消息气泡中，回复引用文字应使用浅色/白色 */
-    .sent .message-reply-sender,
-    .sent .message-reply-content {
-        color: var(--sent-text);
+    /* <FIX> 针对收到的消息气泡，回复引用块使用不同的颜色方案以保持浅色气泡的对比度 */
+    .received .message-reply {
+      color: var(--text-primary);
+      background: var(--border-color);
     }
 
     .message-reply:hover {
-      /* 使用更深的背景色来增加悬停效果 */
-      background: var(--border-color); 
+      /* <FIX> 调整悬停背景色 */
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .received .message-reply:hover {
+      background: var(--bg-secondary);
     }
 
     .message-reply-sender {
       /* <CHANGE> 修改@提及颜色为白色，在蓝色背景上更清晰 */
-      color: var(--mention-color);
+      /* <FIX> 确保发送者名称也使用白色 */
+      color: var(--reply-text);
       font-weight: 600;
+    }
+
+    .received .message-reply-sender {
+      color: var(--accent-primary);
     }
 
     .message-reply-content {
@@ -402,7 +413,7 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       z-index: 10;
     }
-    
+
     .message:hover .message-actions {
       display: flex;
     }
@@ -431,11 +442,6 @@
       color: var(--mention-color);
       font-weight: 600;
       cursor: pointer;
-    }
-    
-    /* 修正：在收到的消息气泡中，@提及文字应使用深色 */
-    .received .mention {
-        color: var(--accent-primary);
     }
 
     .mention:hover {
@@ -1192,7 +1198,7 @@
     </div>
   </div>
   <div class="footer">
-    ©️Copyright Sam Zhang 2025 v2.0
+    ©️Copyright Sam Zhang 2025 v2.1
   </div>
 </div>
 
@@ -1249,22 +1255,20 @@
     </div>
     <div class="update-title">
       <h3>新版本更新</h3>
-      <p>QuickChat 已更新到 v2.0</p>
+      <p>QuickChat 已更新到 v2.1</p>
     </div>
   </div>
   <div class="update-content">
     <p>感谢您使用 QuickChat！我们进行了以下更新：</p>
     <ul>
-      <li>新增消息回复功能</li>
-      <li>新增@提及用户功能</li>
-      <li>修复颜色对比问题</li>
+      <li>优化了浅色主题下，发送消息中引用内容的文字对比度</li>
     </ul>
   </div>
   <div class="update-actions">
     <button onclick="hideUpdatePopup(true)">OK</button>
   </div>
   <div class="update-version">
-    版本 2.0 - 2025年11月16日
+    版本 2.1 - 2025年11月16日
   </div>
 </div>
 
@@ -1279,7 +1283,7 @@ let userCount = 1;
 let roomUsers = [];
 let currentTheme = localStorage.getItem('theme') || 'system';
 let isRoomPaused = false;
-let currentAppVersion = '1.9';
+let currentAppVersion = '2.1';
 
 let replyToMessage = null;
 let replyToSender = null;
