@@ -43,6 +43,11 @@
       /* <FIX> 新增：回复引用块的背景色和文字颜色 (浅色模式) */
       --reply-bg: rgba(255, 255, 255, 0.2); 
       --reply-text: #ffffff;
+      
+      /* <CHANGE> 消息操作按钮背景色 */
+      --action-bg: #ffffff; 
+      /* <CHANGE> 消息操作按钮边框色/投影色 */
+      --action-shadow: rgba(0, 0, 0, 0.15); 
     }
 
     [data-theme="dark"] {
@@ -76,6 +81,11 @@
       /* <FIX> 新增：回复引用块的背景色和文字颜色 (暗色模式) */
       --reply-bg: rgba(255, 255, 255, 0.15);
       --reply-text: #ffffff;
+      
+      /* <CHANGE> 消息操作按钮背景色 */
+      --action-bg: #2d3748;
+      /* <CHANGE> 消息操作按钮边框色/投影色 */
+      --action-shadow: rgba(255, 255, 255, 0.1); 
     }
 
     * {
@@ -400,40 +410,61 @@
       text-overflow: ellipsis;
     }
 
-    /* 新增：消息操作按钮 */
+    /* 新增：消息操作按钮 - 已修改为支持渐变动画 */
     .message-actions {
-      display: none;
+      display: flex; /* <CHANGE> 始终保持 flex, 用 opacity 控制显示/隐藏 */
+      opacity: 0; /* <CHANGE> 初始状态: 隐藏 */
+      pointer-events: none; /* <CHANGE> 初始状态: 不可点击 */
+      /* <CHANGE> 调整位置到消息气泡的右下角/左下角 */
       position: absolute;
-      top: -32px;
-      right: 10px;
+      bottom: 65px; /* 移到气泡下方 */
+      right: 0; /* 针对 .sent 气泡 */
       gap: 5px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 4px;
+      /* <CHANGE> 使用变量 */
+      background: var(--action-bg); 
+      border-radius: 6px; /* 稍微大一点的圆角 */
       padding: 4px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      /* <CHANGE> 使用变量 */
+      box-shadow: 0 2px 8px var(--action-shadow); 
       z-index: 10;
+      transition: opacity 0.3s ease, transform 0.3s ease; /* <CHANGE> 修改为针对 opacity 和 transform 的平滑过渡 */
+      transform: translateY(5px); /* <CHANGE> 初始状态向下偏移 5px */
+    }
+
+    /* 针对收到的消息气泡，操作按钮出现在左下角 */
+    .received .message-actions {
+      left: 0;
+      right: auto;
     }
 
     .message:hover .message-actions {
-      display: flex;
+      opacity: 1; /* <CHANGE> 悬停状态: 完全显示 */
+      pointer-events: auto; /* <CHANGE> 悬停状态: 可点击 */
+      transform: translateY(0); /* <CHANGE> 悬停状态: 移回原位 */
     }
 
     .message-action-btn {
-      background: var(--accent-primary);
+      /* <CHANGE> 按钮颜色使用统一的蓝色 */
+      background: var(--accent-primary); 
       color: white;
       border: none;
       border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 0.75rem;
+      /* <CHANGE> 缩小按钮尺寸 */
+      padding: 4px 8px; 
+      font-size: 0.8rem; /* 稍微大一点的字体 */
+      font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
       width: auto;
       height: auto;
+      /* <CHANGE> 移除 Hover 效果，保持静态 */
+      transform: none; 
+      box-shadow: none;
     }
 
     .message-action-btn:hover {
       background: var(--accent-secondary);
-      transform: scale(1.05);
+      transform: none; /* 覆盖全局按钮的 transform: scale(1.05); */
     }
 
     /* 新增：@提及样式 */
@@ -533,6 +564,8 @@
       transform: translateY(10px);
       position: relative;
       transition: background-color 0.3s ease, color 0.3s ease;
+      /* <CHANGE> 增加下方空间以容纳操作按钮 */
+      margin-bottom: 4px; /* 消息间距缩短为 32px */
     }
 
     .message .sender {
@@ -594,6 +627,7 @@
       align-self: center;
       animation: systemFadeIn 0.5s forwards cubic-bezier(0.22, 1, 0.36, 1);
       transition: background-color 0.3s ease, color 0.3s ease;
+      margin-bottom: 10px; /* 调整系统消息的间距 */
     }
 
     @keyframes systemFadeIn {
@@ -735,11 +769,25 @@
       .message {
         font-size: 14px;
         max-width: 85%;
+        /* <CHANGE> 移动端也增加下方空间 */
+        margin-bottom: 4px; /* 消息间距缩短为 32px */
       }
 
       .theme-switch {
         top: 15px;
         right: 15px;
+      }
+      
+      /* 移动端操作按钮调整 */
+      .message-actions {
+        bottom: -28px;
+        padding: 2px 4px;
+        gap: 3px;
+        border-radius: 5px;
+      }
+      .message-action-btn {
+        padding: 3px 6px;
+        font-size: 0.75rem;
       }
     }
 
@@ -1198,7 +1246,7 @@
     </div>
   </div>
   <div class="footer">
-    ©️Copyright Sam Zhang 2025 v2.1
+    ©️Copyright Sam Zhang 2025 v2.2
   </div>
 </div>
 
@@ -1255,20 +1303,20 @@
     </div>
     <div class="update-title">
       <h3>新版本更新</h3>
-      <p>QuickChat 已更新到 v2.1</p>
+      <p>QuickChat 已更新到 v2.2</p>
     </div>
   </div>
   <div class="update-content">
     <p>感谢您使用 QuickChat！我们进行了以下更新：</p>
     <ul>
-      <li>优化了浅色主题下，发送消息中引用内容的文字对比度</li>
+      <li>优化“回复”和“@”操作的操作动效</li>
     </ul>
   </div>
   <div class="update-actions">
     <button onclick="hideUpdatePopup(true)">OK</button>
   </div>
   <div class="update-version">
-    版本 2.1 - 2025年11月16日
+    版本 2.2 - 2025年11月16日
   </div>
 </div>
 
@@ -1283,7 +1331,7 @@ let userCount = 1;
 let roomUsers = [];
 let currentTheme = localStorage.getItem('theme') || 'system';
 let isRoomPaused = false;
-let currentAppVersion = '2.1';
+let currentAppVersion = '2.2';
 
 let replyToMessage = null;
 let replyToSender = null;
@@ -1758,7 +1806,6 @@ function setReplyTo(sender, content, messageId) {
   const displayContent = content.length > 30 ? content.substring(0, 30) + '...' : content;
   
   // *** 更改点 1: 修改回复指示器的显示格式为 "回复：【消息】" ***
-  // 注意：如果您的 HTML 中仍有 "回复给: "，最终显示将是 "回复给: 回复：【消息】"
   document.getElementById('replyToUser').textContent = `回复：${displayContent}`;
   
   indicator.style.display = 'flex';
@@ -1950,7 +1997,7 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
     const displayContent = replyTo.content.length > 20 ? replyTo.content.substring(0, 20) + '...' : replyTo.content;
     
     replyDiv.innerHTML = `
-      <span class="message-reply-sender">回复：【${displayContent}】</span>
+      <span class="message-reply-sender">回复：${displayContent}</span>
     `;
     
     msgDiv.appendChild(replyDiv);
@@ -1980,7 +2027,7 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
   if (type !== 'system') {
     const replyBtn = document.createElement('button');
     replyBtn.classList.add('message-action-btn');
-    replyBtn.textContent = '回复';
+    replyBtn.innerHTML = '回复';
     replyBtn.onclick = (e) => {
       e.stopPropagation();
       setReplyTo(sender, text, messageId);
@@ -1989,7 +2036,7 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
     
     const mentionBtn = document.createElement('button');
     mentionBtn.classList.add('message-action-btn');
-    mentionBtn.textContent = '@';
+    mentionBtn.innerHTML = '@';
     mentionBtn.onclick = (e) => {
       e.stopPropagation();
       const input = document.getElementById('messageInput');
@@ -2013,18 +2060,9 @@ function addMessage(sender, text, type, isHostMessage = false, replyTo = null, m
     
     msgDiv.appendChild(actionsDiv);
     
-    // 添加鼠标事件来显示/隐藏操作按钮
-    msgDiv.addEventListener('mouseenter', function() {
-      actionsDiv.style.display = 'flex';
-    });
-    
-    msgDiv.addEventListener('mouseleave', function() {
-      // 只有在鼠标离开整个消息气泡时才隐藏
-      if (actionsDiv.contains(document.activeElement)) {
-        return; 
-      }
-      actionsDiv.style.display = 'none';
-    });
+    // <CHANGE> 移除了原有的 JS mouseenter/mouseleave 事件，改为纯 CSS :hover 实现动画
+    // msgDiv.addEventListener('mouseenter', function() { ... });
+    // msgDiv.addEventListener('mouseleave', function() { ... });
   }
   
   document.getElementById('chatMessages').appendChild(msgDiv);
